@@ -211,6 +211,11 @@
 ;;  # obstacle 
 ;; ^ start location
 ;; O temporary obstacle
+;; detect a loop we can remember if we moved into the square N E S W 
+;;           CHAR  N E S W            
+;;             0   1 2 3 4 
+;;   vector of size 5  (make-vector 5 0)  #(0 0 0 0 0)
+;;                                         ch N E S W 
 (define (make-obj fn) 
   (let* ((src #f) ;; (big) external vector of strings read to create a big object
          (wid #f)
@@ -219,9 +224,11 @@
          (start-y 0)
          (dir 'north)
          (pos #f)
+         (looped #f)
          (vec #f))
     (letrec ((init (lambda ()
                      (set! src (fn)) ;; (big) external vector of strings read to create a big object
+                     (set! looped #f)
                      (set! wid (vector-length src))
                      (set! hgt (string-length (vector-ref src 0)))
                      (set! start-x 0)
@@ -234,13 +241,18 @@
                                                (svec (vector-ref src y)))
                                            (vector-set! vec y vec2)
                                            (iter 0 (- wid 1) (lambda (x)
-                                                               (let ((ch (string-ref svec x)))
-                                                                 (vector-set! vec2 x ch)
+                                                               (let ((ch (string-ref svec x))
+                                                                     (mem-vec (make-vector 5 0)))                                                                 
+                                                                 (vector-set! vec2 x mem-vec)
+                                                                 ;; each entry in vec - vec is another vec 
+                                                                 (vector-set! mem-vec 0 ch)
                                                                  ;; ;; (display "x = ")(display x)
                                                                  ;; ;; (display " y = ")(display y)
                                                                  (if (char=? ch #\^)
                                                                      (begin (set! start-x x)
-                                                                            (set! start-y y))
+                                                                            (set! start-y y)
+                                                                            ;; ^ north = 1 step 
+                                                                            (vector-set! mem-vec 1 1))
                                                                      #f)                                              
                                                                  ;;(display ch)
                                                                  )))
@@ -255,13 +267,40 @@
                         (let ((vec2 (vector-ref vec y)))
                           (iter 0 (- wid 1) 
                                 (lambda (x)
-                                  (let ((ch (vector-ref vec2 x)))
-                                    (cond
-                                     ((or (eq? ch #\X)(eq? ch #\^))
-                                      (set! count (+ count 1))))))))))
+                                  (let ((mem-vec (vector-ref vec2 x)))
+                                    (let ((ch (vector-ref mem-vec 0)))
+                                      (cond
+                                       ((or (eq? ch #\X)(eq? ch #\^))
+                                        (set! count (+ count 1)))))))))))
                 count)))
 
+             ;; internal routine 
+             (get-path  
+              (lambda ()
+                (let* ((count (- (get-square-count) 1))
+                      (i 0)
+                      (path-vec (make-vector count)))
+                (iter 0 (- hgt 1) 
+                      (lambda (y)
+                        (let ((vec2 (vector-ref vec y)))
+                          (iter 0 (- wid 1) 
+                                (lambda (x)
+                                  (let ((mem-vec (vector-ref vec2 x)))
+                                    (let ((ch (vector-ref mem-vec 0)))
+                                      (cond
+                                       ((eq? ch #\X)
+                                        (let ((tmp (make-vector 2)))
+                                          (vector-set! tmp 0 x)
+                                          (vector-set! tmp 1 y)
+                                          (vector-set! path-vec i tmp)
+                                          (set! i (+ i 1))))))))))))
+                path-vec)))
+
+
              ;; clear clears path and obstacle
+             ;; if char on mem-vec 0 is #\X or #\O then make it empty #\.
+             ;; zero all direction counts also. north = 0 south = 0 east = 0 west = 0
+             ;; start square ^ also needs to be reset too
              (clear 
               (lambda ()
                 (iter 0 (- hgt 1) 
@@ -269,32 +308,94 @@
                         (let ((vec2 (vector-ref vec y)))
                           (iter 0 (- wid 1) 
                                 (lambda (x)
-                                  (let ((ch (vector-ref vec2 x)))
-                                    (cond
-                                     ((or (eq? ch #\X)(eq? ch #\O))
-                                      (vector-set! vec2 x #\.)))))))))))
-              
+                                  (let ((mem-vec (vector-ref vec2 x)))
+                                    (let ((ch (vector-ref mem-vec 0)))
+                                      (vector-set! mem-vec 1 0)
+                                      (vector-set! mem-vec 2 0)
+                                      (vector-set! mem-vec 3 0)
+                                      (vector-set! mem-vec 4 0)
+                                      (cond
+                                       ((and (= x start-x) (= y start-y))
+                                        (vector-set! mem-vec 0 #\^)))
+                                      
+                                      (cond
+                                       ((or (eq? ch #\X)
+                                            (eq? ch #\O))
+                                        (vector-set! mem-vec 0 #\.))))))))))
+                ;; 
+                (set! looped #f)
+                (set! dir 'north)
+                (set! pos (vector start-x start-y))
+                (inc-north start-x start-y)
+                ))
+             
+             ;; we have looped if looped is set 
+             (looped? (lambda () looped))
+
              ;; raw x y setting - may corrupt vector !!!
+             ;; setting a character ?
              (get (lambda (x y) ;; no bounds checks !!!
-                    (vector-ref (vector-ref vec y) x)))
+                    (let ((mem-vec (vector-ref (vector-ref vec y) x)))
+                      (vector-ref mem-vec 0))))
+
              (set (lambda (x y z) ;; no bounds checks !!!
-                    (vector-set! (vector-ref vec y) x z)))
+                    (let ((mem-vec (vector-ref (vector-ref vec y) x)))
+                      (vector-set! mem-vec 0 z))))
 
              (rock (lambda (x y) ;; no bounds checks !!!
                     (set x y #\O)))
+             
+             (inc-north (lambda (x y)
+                          (let ((mem-vec (vector-ref (vector-ref vec y) x)))
+                            (let ((val (vector-ref mem-vec 1)))
+                              (vector-set! mem-vec 1 (+ val 1))))))
+
+             (inc-east (lambda (x y)
+                          (let ((mem-vec (vector-ref (vector-ref vec y) x)))
+                            (let ((val (vector-ref mem-vec 2)))
+                              (vector-set! mem-vec 2 (+ val 1))))))
+
+             (inc-south (lambda (x y)
+                          (let ((mem-vec (vector-ref (vector-ref vec y) x)))
+                            (let ((val (vector-ref mem-vec 3)))
+                              (vector-set! mem-vec 3 (+ val 1))))))
+
+             (inc-west (lambda (x y)
+                         (let ((mem-vec (vector-ref (vector-ref vec y) x)))
+                           (let ((val (vector-ref mem-vec 4)))
+                             (vector-set! mem-vec 4 (+ val 1))))))
 
              ;; stamp foot where we are 
+             ;; is VEC the global grid ?
              (stamp (lambda (p)  
-                      (let ((x (vector-ref p 0))
-                            (y (vector-ref p 1)))
-                        (let ((ch (get x y)))
-                          (cond
-                           ((eq? ch #\^) #f)
-                           ((eq? ch #\O) (error (fmt "tried stamp on obstacle O at pos ~a~%" p)))
-                           ((eq? ch #\#) (error (fmt "tried stamp on obstacle # at pos ~a~%" p)))
-                           ((eq? ch #\X) #f) ;; already stamped
-                           ((eq? ch #\.) (set x y #\X))
-                           (#t (error (fmt "stamp bad char ~a~%" p))))))))
+                      (let* ((x (vector-ref p 0))
+                             (y (vector-ref p 1))
+                             (m-vec (vector-ref (vector-ref vec y) x))
+                             (ch (vector-ref m-vec 0)))
+                             (cond
+                              ((eq? ch #\^) #f)
+                              ((eq? ch #\O) (error (fmt #t "tried stamp on obstacle O at pos ~a~%" p)))
+                              ((eq? ch #\#) (error (fmt #t "tried stamp on obstacle # at pos ~a~%" p)))
+                              ((eq? ch #\X) #f) ;; already stamped
+                              ((eq? ch #\.) (vector-set! m-vec 0 #\X))
+                              (#t (error (fmt #t "stamp bad char ~a~%" p))))
+                             (cond ;; N E S W 
+                              ((eq? dir 'north) 
+                               (let ((ct (+ 1 (vector-ref m-vec 1))))
+                                 (vector-set! m-vec 1 ct)
+                                 (if (> ct 1) (set! looped #t) #f)))
+                              ((eq? dir 'east) 
+                               (let ((ct (+ 1 (vector-ref m-vec 2))))
+                                 (vector-set! m-vec 2 ct)
+                                 (if (> ct 1) (set! looped #t) #f)))
+                              ((eq? dir 'south) 
+                               (let ((ct (+ 1 (vector-ref m-vec 3))))
+                                 (vector-set! m-vec 3 ct)
+                                 (if (> ct 1) (set! looped #t) #f)))
+                              ((eq? dir 'west) 
+                               (let ((ct (+ 1 (vector-ref m-vec 4))))
+                                 (vector-set! m-vec 4 ct)
+                                 (if (> ct 1) (set! looped #t) #f)))))))
              ;;
              (off-map? (lambda (p) ;; off map?
                          (let ((x (vector-ref p 0))
@@ -329,13 +430,20 @@
                               ((char=? ch #\O) #t)
                               (#t (error (fmt #t "obstacle: bad char ~a " ch))))))))
              (run (lambda () 
-                    (init)
-                     (set! pos (vector start-x start-y))
+                    (clear) ;; init
+                    (run-no-clear)))
+
+             (run-no-clear (lambda ()                     
+                    (set! pos (vector start-x start-y))
                     (next))) ;; call next
+
              (next (lambda () 
                      ;;(fmt #t "guard at ~a ~%" pos)
                      (cond
-                      ((off-map? pos) (fmt #t "off map at ~a ~%" pos))
+                      ((looped?) (fmt #t "looped at ~a ~%" pos) 'looped)
+                      ((off-map? pos) 
+                       ;;(fmt #t "off map at ~a ~%" pos) 
+                       #f)
                       (#t (cond
                            ((eq? dir 'north) (next-north))
                            ((eq? dir 'east) (next-east))
@@ -345,7 +453,10 @@
              (next-north (lambda ()
                            (let ((p2 (north-of pos)))
                              (cond
-                              ((off-map? p2) (fmt #t "off map at ~a ~%" p2))
+                              ((off-map? p2) 
+                               ;;(fmt #t "off map at ~a ~%" p2) 
+                               #f
+                               )
                               ((obstacle? p2) ;; turn east
                                (set! dir 'east)
                                (next))
@@ -356,7 +467,10 @@
              (next-south (lambda ()
                            (let ((p2 (south-of pos)))
                              (cond
-                              ((off-map? p2) (fmt #t "off map at ~a ~%" p2))
+                              ((off-map? p2) 
+                               ;;(fmt #t "off map at ~a ~%" p2)
+                               #f
+                               )
                               ((obstacle? p2) ;; turn
                                (set! dir 'west)
                                (next))
@@ -367,7 +481,9 @@
              (next-east (lambda ()
                            (let ((p2 (east-of pos)))
                              (cond
-                              ((off-map? p2) (fmt #t "off map at ~a ~%" p2))
+                              ((off-map? p2) 
+                               ;;(fmt #t "off map at ~a ~%" p2)
+                               #f)
                               ((obstacle? p2) ;; turn
                                (set! dir 'south)
                                (next))
@@ -378,7 +494,9 @@
              (next-west (lambda ()
                            (let ((p2 (west-of pos)))
                              (cond
-                              ((off-map? p2) (fmt #t "off map at ~a ~%" p2))
+                              ((off-map? p2) 
+                               ;;(fmt #t "off map at ~a ~%" p2)
+                               )
                               ((obstacle? p2) ;; turn
                                (set! dir 'north)
                                (next))
@@ -394,10 +512,40 @@
                              (let ((vec2 (vector-ref vec y)))
                                (iter 0 (- wid 1) 
                                         (lambda (x)
-                                          (let ((ch (vector-ref vec2 x)))
+                                          (let* ((mem-vec (vector-ref vec2 x))
+                                                 (ch (vector-ref mem-vec 0)))
                                             (fmt #t "~a" ch)
                                             )))
                                (newline))))))
+             ;; brute :
+             ;; run 
+             ;; collect where we placed an X , allow start square a lifeline (no obstacle there)
+             ;;
+             ;;
+             ;; iterate over path-vec from 0 to plim-1 get a pos
+             ;; clear 
+             ;; place obstacle at ox oy
+             ;; run ... may loop ... how detect this ?
+             ;; if it loops - record that and move onto next
+             (brute-force (lambda ()
+                            (run) 
+                            (fmt #t "we got to brute force routine anyways~%")
+                            (let* ((path-vec (get-path))
+                                   (plim (vector-length path-vec))
+                                   (loop-count 0))
+                              (iter 0 (- plim 1) 
+                                    (lambda (i)
+                                      (let* ((ob-pos (vector-ref path-vec i))
+                                             (ob-x (vector-ref ob-pos 0))
+                                             (ob-y (vector-ref ob-pos 1)))
+                                        (clear)
+                                        ;;(fmt #t "placing obstacle at ~a ~a ~%" ob-x ob-y)                                  
+                                        (set ob-x ob-y #\O)                                  
+                                        (let ((result (run-no-clear))) ;; may loop
+                                          (cond
+                                           ((eq? result 'looped)
+                                            (set! loop-count (+ 1 loop-count))))))))
+                              (fmt #t "there were ~a loops detected ~%" loop-count))))
 
              ;; internal definitions
              )
@@ -413,6 +561,7 @@
          ((eq? op 'size) (list wid hgt))
          ((eq? op 'count) (get-square-count))
          ((eq? op 'clear) (clear))
+         ((eq? op 'brute) (brute-force))
          
          ((eq? op 'rock) (let ((dx (car args))
                                    (dy (car (cdr args))))
@@ -430,6 +579,7 @@
          (#t (fmt #f "unknown message ~a with args ~a ~%" op args)))))))
 
 
+
 (define (make-big) 
   (make-obj big))
 
@@ -443,10 +593,14 @@
     (p 'count)))
 
 
+(define (part-2)
+  (let ((p (make-big)))
+    (p 'brute)))
 
 
-  
 
+;;(part-2)
+;; hurray ! there were 1688 loops detected 
 
 
 
