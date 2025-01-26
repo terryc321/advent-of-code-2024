@@ -1,10 +1,10 @@
 
 (import (chicken pretty-print))
 (import (srfi-1))
-
+(import bindings)
 
 (define final
- #(((29 71) (52 31) (5388 4716))
+ '(((29 71) (52 31) (5388 4716))
   ((47 16) (14 21) (4795 2996))
   ((21 11) (12 60) (741 2859))
   ((61 34) (17 50) (2223 12510))
@@ -325,95 +325,73 @@
   ((11 67) (64 12) (7909 5285))
   ((67 89) (90 27) (9541 5825))))
 
-#|
-
-Button A: X+94, Y+34
-Button B: X+22, Y+67
-Prize: X=8400, Y=5400
-
-Button A: X+26, Y+66
-Button B: X+67, Y+21
-Prize: X=12748, Y=12176
-
-Button A: X+17, Y+86
-Button B: X+84, Y+37
-Prize: X=7870, Y=6450
-
-Button A: X+69, Y+23
-Button B: X+27, Y+71
-Prize: X=18641, Y=10279
-
-|#
-
-(import bindings)
-;; binding form not quoted  , value match against is quoted  xprs .. follow 
-;; ((29 71) (52 31) (5388 4716))
-;; is there a solution where some amount of  
-;;      button A  +  button B  = prize C
-;;           a * A + b * B = C 
-;; suppose a is 0 , just b what would b maximum be ? x3 / x2
-;;                    b maximum on y axis ?  y3 / y2 
-(define solve 
-  (lambda (triple)
-    (let ((solved #f))
-      (bind ((x1 y1)(x2 y2)(x3 y3)) triple
-            ;; x3 y3 coords much much larger now 
-            (let ((x3 (+ x3 10000000000000))
-                  (y3 (+ y3 10000000000000)))
-              (list x1 y1 x2 y2 x3 y3)
-              ;; maximum y possible , maximum x possible , min of those two gives a max value
-              (let ((bmax (min (+ 1 (floor (/ y3 y2)))
-                               (+ 1 (floor (/ x3 x2)))))
-                    (amax (min (+ 1 (floor (/ y3 y1)))
-                               (+ 1 (floor (/ x3 x1))))))                
-                (let loop2 ((b 0))
-                  (let loop ((a 0))
-                    (let ((cx (+ (* a x1) (* b x2)))
-                          (cy (+ (* a y1) (* b y2))))
-                      ;; found solution ?
-                      (when  (and (= cx x3)(= cy y3))                      
-                        ;; warning message ?
-                        ;; (when (or (> a 100) (> b 100))
-                        ;;   (fmt #t "exceeded 100 button press solution ~a ~a ~%" a b))
-                        ;;(fmt #t "position ~a ~a ~%" cx cy)
-                        (set! solved (+ (* 3 a) b)))
-                      ;; keep trying
-                      (if (and (not solved) (< a amax))
-                          (loop (+ a 1)))))
-                  (if (and (not solved) (< b bmax))
-                      (loop2 (+ b 1))))))
-            (cond 
-             ((not solved) 0)
-             (#t solved))))))
+;; ;; part 2 example 2 
+;; Button A: X+26, Y+66
+;; Button B: X+67, Y+21
+;; Prize: X=10000000012748, Y=10000000012176
+;; 
+;; read it vertically 
+;; 26 a + 67 b = 10000000012748  ................ eq 1 
+;;  x1     x2      x3 
+;;
+;; 66 a + 21 b = 10000000012176  ................ eq 2 
+;; y1      y2       y3
+;;
+;; read it vertically 
+;;
+;; 26 a + 67 b = 10000000012748
+;;  x1     x2      x3 
+;;
+;; let k = x1 / y1  , multiply eq 2 by (22/66) or x1/ y1 throughout 
+;;
+;; 66 * (26/66) a + 21 b * (26/66) = 10000000012176 * (26/66)
+;; y1      y2       y3
+;;
+;; -----------------------------------------
+;; 26 a + 67 b = 10000000012748
+;;  x1     x2      x3 
+;;
+;; 26 a + 21 b * k = 10000000012176 * k
+;;---------------------------------------------
+;; (- x2 (* y2 k))        (- x3 (* y3 k))
+;; 
+;; ---------------------------------------------
+;; let k = x1 / y1
+;;         b =         (/  (- x3 (* y3 k)) (- x2 (* y2 k)))
+;; check 2 solutions work for a 
+;;         a =         (/ (- x3 (* x2 b)) x1)
+;;         a =         (/ (- y3 (* y2 b)) y1)
+;;---------------------------------------------
 
 
+(define solve (lambda (triple)
+                 (bind ((x1 y1)(x2 y2)(x3 y3)) triple
+                       ;; x3 y3 coords much much larger now 
+                       (let ((x3 (+ x3 10000000000000))
+                             (y3 (+ y3 10000000000000)))
+                         (let* ((k (/ x1 y1))
+                                (b (/  (- x3 (* y3 k)) (- x2 (* y2 k))))
+                                (a1 (/ (- x3 (* x2 b)) x1))
+                                (a2 (/ (- y3 (* y2 b)) y1)))
+                           (cond
+                            ((and (integer? a1) (integer? a2) (integer? b) (= a1 a2))
+                             (fmt #t "")
+                             (+ (* a1 3) b))
+                            (#t 0)))))))
 
-(define example-1 (lambda () (solve '((94 34)(22 67)(8400 5400)))))
-(define example-2 (lambda () (solve '((26 66)(67 21)(12748 12176)))))
-(define example-3 (lambda () (solve '((17 86)(84 37)(7870 6450)))))
-(define example-4 (lambda () (solve '((69 23)(27 71)(18641 10279)))))
+(define examples 
+  (lambda ()
+    (map (lambda (x) (list (solve x) x))
+         '(
+           ((94 34)(22 67)(8400 5400))
+           ((26 66)(67 21)(12748 12176))
+           ((17 86)(84 37)(7870 6450))
+           ((69 23)(27 71)(18641 10279))
+           
+           ))))
 
-(define part-1 (lambda () 
-                 (let ((size (vector-length final))
-                       (tot 0))
-                   (let loop ((i 0))
-                     (let* ((triple (vector-ref final i))
-                            (prize (solve triple)))                       
-                       (set! tot (+ tot prize))
-                       (when (< i (- size 1))
-                         (loop (+ i 1)))))
-                   tot)))
+(define part-2 (apply + (map solve final)))
 
-
-;; accepted answer
-;; (part-1)
-;; 35082
-
-;; how would go about solving this then ?
-
-
-
-
-
-
-
+;; > part-2
+;; 82570698600470
+;; yay !
