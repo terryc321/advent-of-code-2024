@@ -1,0 +1,24 @@
+
+readme 
+
+1 ) Write the grammar in form antlr can understand
+
+2 ) run antlr , the antlr4 jar file needs to be on java -jar /usr/local/lib/antlr-4.13.1-complete.jar $@
+
+antlr4 Grammar.g4
+equivalent to 
+java -jar /usr/local/lib/antlr-4.13.1-complete.jar Grammar.g4
+
+3 ) compile java files , dont need jar file here
+
+javac *.java
+
+4 )  generate s expression 
+
+# run Grammar program 
+# start with 's' as root of grammar 
+# feed input.txt file into that configuration 
+grun Grammar s -tree < ../input.txt > output.scm 
+
+5 ) 
+
