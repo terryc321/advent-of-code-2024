@@ -1,15 +1,43 @@
 
+(*
+ppart 2 is about see-ing a christmas tree , possibly some measure of how disconnected the image is 
+perhaps we should somehow track if pixels are close together ? less noise ?? 
+*)
+
+(* importing Unix module after open Core , allows us to find the Unix.sleepf   *)
+
+(* more documentation should be avaialble on how to use ocaml to get best out of it  *)
+
+(* more docs on espeicalliy the nasty match error on lists is terrible *)
+
 (* how read all lines from file in ocaml *)
 
 (* 
 #require "core";;
+open Core;;
+
+#require "graphics";;
+open Graphics;;
+
 #use "fun.ml";;
+
 
 --- ignore following
 --- open Core.Std gives an error 
 ----#use "core";; lowercase ...??
 *)
+
+#require "core";;
 open Core ;;
+
+#require "Unix";;
+module Unix = UnixLabels;;
+
+(* make graphics available by 
+> opam install graphics
+*)
+#require "graphics";;
+
 let read file = In_channel.read_lines file ;;
 
 (* 
@@ -472,6 +500,13 @@ let rec after wid hgt n robots  = (fun () -> let result = repeat (fun xs -> step
                              let () = show_grid wid hgt result in 
                              result );;
 
+
+let after_silent wid hgt n robots () = 
+    repeat (fun xs -> step wid hgt xs) robots n 
+                             
+
+
+
 (*
 now the updated after routine we do 
 > after 11 7 100 ex_vals () ;;
@@ -603,8 +638,218 @@ What is the fewest number of seconds that must elapse for the robots to display 
 
 have we got a graphical display to show this from ocaml ?? 
 
+https://caml.inria.fr/pub/docs/oreilly-book/pdf/chap5.pdf
+
+ocamlmktop -custom -o mytoplevel graphics.cma -cclib \
+-L/usr/X11/lib -cclib -lX11
+*)
+open Graphics ;;
+
+(*  fails on stat.key cannot unify or type check  
+let res  = 
+   open_graph "" ;
+   set_window_title "hello world";
+   let stat = wait_next_event [Key_pressed] in
+   if stat.key = 'f' then true else false 
 *)
 
+let width = 900
+let height = 900
+let s_width = 8 
+let s_height = 8 
+let off_x = 50 
+let off_y = 50 
+
+
+let ()  = 
+   open_graph "" ;
+   resize_window width height ;
+   set_window_title "hello world"
+
+(* flip vertical because grid expecting 0 0 to be top left , 
+ whereas graphics coords 0 0 on bottom left  according to docs 
+*)
+let draw_blank_square (x:int) (y:int) = 
+   set_color Graphics.black;
+   fill_rect (x * s_width + off_x) (height - (y * s_height) - off_y) s_width s_height
+  
+let draw_filled_square (x:int) (y:int) = 
+   set_color Graphics.yellow;
+   fill_rect (x * s_width + off_x) (height - (y * s_height) - off_y) s_width s_height
+
+
+(*
+let rec viz_grid (wid:int) (hgt:int) (robots : robot list) = 
+     viz_grid2 0 0 wid hgt robots 
+and
+ viz_grid2 (x:int) (y:int) (wid:int) (hgt:int) (robots : robot list) = 
+  if (x >= wid) then viz_grid2 0 (y + 1) wid hgt robots
+  else if (y >= hgt) then let () = print_endline "" in 
+                         let () = flush stdout in ()                          
+  else if x = 0 then let () =  print_endline "" in
+    let hr = List.length (has_robot x y robots) in
+    match hr with 
+    | 0 -> let () = draw_blank_square x y in viz_grid2 (x + 1) y wid hgt robots 
+    | _ -> let () = (Printf.printf "%d" hr) in 
+           viz_grid2 (x + 1) y wid hgt robots 
+  else let hr = List.length (has_robot x y robots) in
+    match hr with 
+    | 0 -> let () = (Printf.printf ".") in viz_grid2 (x + 1) y wid hgt robots 
+    | _ -> let () = (Printf.printf "%d" hr) in 
+           viz_grid2 (x + 1) y wid hgt robots 
+*)
+
+
+(*
+let rec viz_grid (wid:int) (hgt:int) (robots : robot list) = 
+     viz_grid2 0 0 wid hgt robots 
+and
+ viz_grid2 (x:int) (y:int) (wid:int) (hgt:int) (robots : robot list) = 
+  if (x >= wid) then viz_grid2 0 (y + 1) wid hgt robots
+  else if (y >= hgt) then let () = print_endline "" in 
+                         let () = flush stdout in ()                          
+  else if x = 0 then let () =  print_endline "" in
+    let hr = List.length (has_robot x y robots) in
+    match hr with 
+    | 0 -> let () = draw_blank_square x y in 
+                    viz_grid2 (x + 1) y wid hgt robots 
+    | _ -> let () = draw_filled_square x y in 
+                    viz_grid2 (x + 1) y wid hgt robots 
+  else let hr = List.length (has_robot x y robots) in
+    match hr with 
+    | 0 -> let () = draw_blank_square x y in
+                    viz_grid2 (x + 1) y wid hgt robots 
+    | _ -> let () = draw_filled_square x y in 
+           viz_grid2 (x + 1) y wid hgt robots 
+*)
+
+
+let rec viz_grid (robots : robot list) = 
+   match robots with 
+   | [] -> ()
+   | Robot(ax,ay,vx,vy) :: rest -> 
+        draw_filled_square ax ay ;
+        viz_grid rest 
+
+
+
+
+(* also key pressed does not understand arrow keys ?? only qwerty keys *)
+(*
+let res  = 
+   open_graph "" ;
+   set_window_title "hello world";
+   let stat = wait_next_event [Key_pressed] in
+   match stat.key with 
+   | 'f' -> stat.key
+   | _ ->  stat.key
+
+  a key = decrease n
+  d key = increase n 
+
+  any other key escapes the event loop 
+*)
+(*
+let rec event_loop n () = 
+   set_window_title ("hello world " ^ (string_of_int n)) ;
+   (* redraw the screen  *)
+   set_color Graphics.black;
+   fill_rect 0 0 width height;
+   let wid = 101 in
+   let hgt = 103 in 
+   let robots = after_silent wid hgt n vals () in 
+   viz_grid wid hgt robots; 
+ 
+ (*
+   set_color Graphics.yellow;
+   fill_rect 0 0 100 100;
+   *)
+
+  (* wait for key press  *)
+   let stat = wait_next_event [Key_pressed] in
+   match stat.key with 
+   | 'a' -> let n2 = max 0 (n - 1) in event_loop n2 ()            
+   | 'd' -> event_loop (n + 1) ()
+   | _ -> ()
+*)
+
+
+(*
+use vals as big external original robot configuration 
+when user pressed a ie to go backward in computation - we just recompute everything again 
+when user presses d to advance we just compute from current robots 
+*)
+let rec event_loop2 n robots () = 
+   set_window_title ("hello world " ^ (string_of_int n)) ;
+   (* redraw the screen  *)
+   set_color Graphics.black;
+   fill_rect 0 0 width height;
+ 
+   let wid = 101 in
+   let hgt = 103 in 
+   (* let robots = after_silent wid hgt n vals () in  *)
+   viz_grid robots; 
+ 
+ (*
+   set_color Graphics.yellow;
+   fill_rect 0 0 100 100;
+   *)
+
+  (* wait for key press  *)
+   (* let stat = wait_next_event [Key_pressed] in 
+   match stat.key with
+   *)
+   Unix.sleepf 0.1 ; 
+   match 'd' with 
+   | 'a' -> let n2 = max 0 (n - 1) in 
+                   (* no change *)
+            if n = n2 then event_loop2 n robots () 
+                              (* after_silent wid hgt n robots *)
+            else let next_vals = after_silent wid hgt n2 vals () in 
+                     event_loop2 n2 next_vals () 
+   | 'd' -> let next_vals = after_silent wid hgt 1 robots () in 
+             event_loop2 (n + 1) next_vals () 
+   | _ -> ()
+
+(* start up the event loop with initial robot positions  *)
+let () = event_loop2 0 vals ()
+
+(* shut down window  *)
+let () = 
+   Graphics.close_graph () 
+
+
+
+
+
+
+(*
+(* assume its localhost , providing a non empty string sends it  *)
+let width = 600 ;;
+let height = 600 ;;
+let () = Graphics.open_graph "";;
+let () = Graphics.set_window_title "advent code 2024 day 14";;
+let () = Graphics.set_color Graphics.black ;;
+let () = Graphics.resize_window width height;;
+let () = Graphics.clear_graph () ;;
+let () = Graphics.fill_rect 0 0 width height;;
+let () = Graphics.set_color Graphics.yellow ;;
+let () = Graphics.fill_rect 0 0 100 100;;
+let rec event_loop () = let stat = wait_next_event [Key_pressed] in
+                    Printf.printf "%c" stat.key 
+                    if stat.key = 'f' then () else event_loop () ;;
+
+let () = event_loop () ;;
+                    
+(*
+let event_loop = 
+         if stat.key = 'f' then Graphics.close_graph
+         else event_loop ;;
+*)
+
+let () = 
+   Graphics.close_graph () ;;
+*)
 
 
 
@@ -632,3 +877,16 @@ let rec has_robot (x:int) (y:int) robots : bool =
 
 (* fixed a show grid bug that made grid appear wider and longer than it should , off by one error *)
 
+(* 
+should we use an array for grid - rather than lists and traversing lists we can just do an 
+array look up 
+xy = x + wid * y 
+for xy zero based indexes 
+if y 0 then just x 
+if y > 0 then x + wid * y , wid is next row as x only ranges from 0 to wid-1 so seems correct 
+
+array of robots but doesnt seem like that would be an advantage 
+
+loop over the robots rather than the entire grid as there are 101 * 103 squares but only 500 robots
+
+*)
