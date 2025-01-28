@@ -37,8 +37,6 @@ open Core;;
 #require "graphics";;
 open Graphics;;
 
-
-
 #use "fun.ml";;
 
 
@@ -681,6 +679,10 @@ let off_x = 50
 let off_y = 50 
 
 
+let ()  = 
+   open_graph "" ;
+   resize_window width height ;
+   set_window_title "hello world"
 
 (* flip vertical because grid expecting 0 0 to be top left , 
  whereas graphics coords 0 0 on bottom left  according to docs 
@@ -830,13 +832,11 @@ let rec event_loop2 n robots () =
    | _ -> ()
 
 (* start up the event loop with initial robot positions  *)
-let run () = 
-   open_graph "" ;
-   resize_window width height ;
-   set_window_title "hello world" ;
-    event_loop2 0 vals () ; 
-       (* shut down window  *)
-             Graphics.close_graph () 
+let () = event_loop2 0 vals ()
+
+(* shut down window  *)
+let () = 
+   Graphics.close_graph () 
 
 
 
