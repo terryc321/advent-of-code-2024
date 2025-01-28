@@ -1,4 +1,19 @@
 
+
+usage : 
+
+press a to go back one frame 
+press d to go forward one frame 
+press any other key to exit
+
+
+load this into ocaml 
+opam install Graphics 
+opam install graphics 
+for x11 graphics window
+
+
+
 (*
 ppart 2 is about see-ing a christmas tree , possibly some measure of how disconnected the image is 
 perhaps we should somehow track if pixels are close together ? less noise ?? 
@@ -796,11 +811,13 @@ let rec event_loop2 n robots () =
    *)
 
   (* wait for key press  *)
-   (* let stat = wait_next_event [Key_pressed] in 
+   (* 
+   let stat = wait_next_event [Key_pressed] in 
    match stat.key with
    *)
-   Unix.sleepf 0.1 ; 
-   match 'd' with 
+   (* Unix.sleepf 0.1 ;  *)
+   let stat = wait_next_event [Key_pressed] in 
+   match stat.key with
    | 'a' -> let n2 = max 0 (n - 1) in 
                    (* no change *)
             if n = n2 then event_loop2 n robots () 
