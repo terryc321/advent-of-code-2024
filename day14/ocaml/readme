@@ -1,0 +1,29 @@
+advent of code 2024 day 14
+
+copy,pasted output
+
+regex.ml  - using regular expression [+-]?[0-9]+  find integer repeat four times per line
+robots.ml - ocaml format of robots in correct order
+< consistency checked input data for robots is good >
+
+teleport.ml -
+repeat.ml  - (* repeat a function applied to a list of things n times where 0 means no times , just return result *)
+
+
+viz.ml - all nighter on graphics get something on screen and responds to user input
+
+
+pipeline 
+
+parse input file to extract position and velocity of each item?
+
+verify output 
+
+in terms of correctness can initial file be constructed same 
+diff a.txt b.txt
+
+ocaml re2 package ? 
+
+module Str
+
+

@@ -201,31 +201,28 @@ let grid_from_robots xs =
   app (fun r -> match r with
       | (x,y,_,_) -> g.(x).(y) <- g.(x).(y) + 1  ) xs ;
 
+  let best_score : int ref = {contents = 0} in 
   let score : int ref = {contents = 0} in 
   for x = 1 to (wid - 1) do
     for y = 1 to (hgt - 1) do
-      let h = (hot x y g) in
-      if h > 0 then (
-        let neighbour : int ref = {contents = 0} in 
-        for x2 = (x - 1) to (x + 1) do
-          for y2 = (y - 1) to (y + 1) do          
-            neighbour := !neighbour + (hot x2 y2 g)                     
-          done
-        done ;
-        if !neighbour > 6 then 
-          score := !score + !neighbour
-      )
-      (* if score > best_score then (best_score := !score)  *)
+      score := 0 ;
+      for x2 = (x - 5) to (x + 5) do
+        for y2 = (y - 5) to (y + 5) do          
+          score := !score + (hot x2 y2 g)                     
+        done
+      done ;
+      if score > best_score then (best_score := !score) 
     done
   done ;
-  !score
+  !best_score
+    
 
 
 (* try iterating until we can see a high score ?  think upto 20, 000 *)
 let rec foo (n:int) (m:int) (xs : (int * int * int * int) list) =
   let r = grid_from_robots xs in
-  (* print_string ("run " ^ string_of_int(n) ^ ": " ^ string_of_int(r) ^ "\n") ; *)
-  if r >= m then ( print_string ("run " ^ string_of_int(n) ^ ": " ^ string_of_int(r) ^ "\n") ;
+  (* print_string ("run " ^ string_of_int(n) ^ ": " ^ string_of_int(r) ^ "\n") ;  *)
+  if r > m then ( print_string ("run " ^ string_of_int(n) ^ ": " ^ string_of_int(r) ^ "\n") ;
                   flush stdout ;
                   foo (n+1) r (next xs)                   
                 )
@@ -289,232 +286,7 @@ let a = grid.(wid-1).(hgt-1)
 
 
 
-(*
-if square has 6 or more neighbours then that square is added to the count
-   after all squares visited total count returned
 
-   
-rather a large number of christmas trees starting after 7055 iterations 
-   
-run 7055: 1493
-run 17458: 1493
-run 27861: 1493
-run 38264: 1493
-run 48667: 1493
-run 59070: 1493
-run 69473: 1493
-run 79876: 1493
-run 90279: 1493
-run 100682: 1493
-run 111085: 1493
-run 121488: 1493
-run 131891: 1493
-run 142294: 1493
-run 152697: 1493
-run 163100: 1493
-run 173503: 1493
-run 183906: 1493
-run 194309: 1493
-run 204712: 1493
-run 215115: 1493
-run 225518: 1493
-run 235921: 1493
-run 246324: 1493
-run 256727: 1493
-run 267130: 1493
-run 277533: 1493
-run 287936: 1493
-run 298339: 1493
-run 308742: 1493
-run 319145: 1493
-run 329548: 1493
-run 339951: 1493
-run 350354: 1493
-run 360757: 1493
-run 371160: 1493
-run 381563: 1493
-run 391966: 1493
-run 402369: 1493
-run 412772: 1493
-run 423175: 1493
-run 433578: 1493
-run 443981: 1493
-run 454384: 1493
-run 464787: 1493
-run 475190: 1493
-run 485593: 1493
-run 495996: 1493
-run 506399: 1493
-run 516802: 1493
-run 527205: 1493
-run 537608: 1493
-run 548011: 1493
-run 558414: 1493
-run 568817: 1493
-run 579220: 1493
-run 589623: 1493
-run 600026: 1493
-run 610429: 1493
-run 620832: 1493
-run 631235: 1493
-run 641638: 1493
-run 652041: 1493
-run 662444: 1493
-run 672847: 1493
-run 683250: 1493
-run 693653: 1493
-run 704056: 1493
-run 714459: 1493
-run 724862: 1493
-run 735265: 1493
-run 745668: 1493
-run 756071: 1493
-run 766474: 1493
-run 776877: 1493
-run 787280: 1493
-run 797683: 1493
-run 808086: 1493
-run 818489: 1493
-run 828892: 1493
-run 839295: 1493
-run 849698: 1493
-run 860101: 1493
-run 870504: 1493
-run 880907: 1493
-run 891310: 1493
-run 901713: 1493
-run 912116: 1493
-run 922519: 1493
-run 932922: 1493
-run 943325: 1493
-run 953728: 1493
-run 964131: 1493
-run 974534: 1493
-run 984937: 1493
-run 995340: 1493
-run 1005743: 1493
-run 1016146: 1493
-run 1026549: 1493
-run 1036952: 1493
-run 1047355: 1493
-run 1057758: 1493
-run 1068161: 1493
-run 1078564: 1493
-run 1088967: 1493
-run 1099370: 1493
-run 1109773: 1493
-run 1120176: 1493
-run 1130579: 1493
-run 1140982: 1493
-run 1151385: 1493
-run 1161788: 1493
-run 1172191: 1493
-run 1182594: 1493
-run 1192997: 1493
-run 1203400: 1493
-run 1213803: 1493
-run 1224206: 1493
-run 1234609: 1493
-run 1245012: 1493
-run 1255415: 1493
-run 1265818: 1493
-run 1276221: 1493
-run 1286624: 1493
-run 1297027: 1493
-run 1307430: 1493
-run 1317833: 1493
-run 1328236: 1493
-run 1338639: 1493
-run 1349042: 1493
-run 1359445: 1493
-run 1369848: 1493
-run 1380251: 1493
-run 1390654: 1493
-run 1401057: 1493
-run 1411460: 1493
-run 1421863: 1493
-run 1432266: 1493
-run 1442669: 1493
-run 1453072: 1493
-run 1463475: 1493
-run 1473878: 1493
-run 1484281: 1493
-run 1494684: 1493
-run 1505087: 1493
-run 1515490: 1493
-run 1525893: 1493
-run 1536296: 1493
-run 1546699: 1493
-run 1557102: 1493
-run 1567505: 1493
-run 1577908: 1493
-run 1588311: 1493
-run 1598714: 1493
-run 1609117: 1493
-run 1619520: 1493
-run 1629923: 1493
-run 1640326: 1493
-run 1650729: 1493
-run 1661132: 1493
-run 1671535: 1493
-run 1681938: 1493
-run 1692341: 1493
-run 1702744: 1493
-run 1713147: 1493
-run 1723550: 1493
-run 1733953: 1493
-run 1744356: 1493
-run 1754759: 1493
-run 1765162: 1493
-run 1775565: 1493
-run 1785968: 1493
-run 1796371: 1493
-run 1806774: 1493
-run 1817177: 1493
-run 1827580: 1493
-run 1837983: 1493
-run 1848386: 1493
-run 1858789: 1493
-run 1869192: 1493
-run 1879595: 1493
-run 1889998: 1493
-run 1900401: 1493
-run 1910804: 1493
-run 1921207: 1493
-run 1931610: 1493
-run 1942013: 1493
-run 1952416: 1493
-run 1962819: 1493
-run 1973222: 1493
-run 1983625: 1493
-run 1994028: 1493
-run 2004431: 1493
-run 2014834: 1493
-run 2025237: 1493
-run 2035640: 1493
-run 2046043: 1493
-run 2056446: 1493
-run 2066849: 1493
-run 2077252: 1493
-run 2087655: 1493
-run 2098058: 1493
-run 2108461: 1493
-run 2118864: 1493
-run 2129267: 1493
-run 2139670: 1493
-run 2150073: 1493
-run 2160476: 1493
-run 2170879: 1493
-run 2181282: 1493
-run 2191685: 1493
-run 2202088: 1493
-run 2212491: 1493
-run 2222894: 1493
-run 2233297: 1493
-run 2243700: 1493
-run 2254103: 1493
-
-*)
 
   
 

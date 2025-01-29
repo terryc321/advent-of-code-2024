@@ -524,7 +524,6 @@ let after_silent wid hgt n robots () =
                              
 
 
-
 (*
 now the updated after routine we do 
 > after 11 7 100 ex_vals () ;;
@@ -679,10 +678,6 @@ let off_x = 50
 let off_y = 50 
 
 
-let ()  = 
-   open_graph "" ;
-   resize_window width height ;
-   set_window_title "hello world"
 
 (* flip vertical because grid expecting 0 0 to be top left , 
  whereas graphics coords 0 0 on bottom left  according to docs 
@@ -819,7 +814,8 @@ let rec event_loop2 n robots () =
    match stat.key with
    *)
    (* Unix.sleepf 0.1 ;  *)
-   let stat = wait_next_event [Key_pressed] in 
+   let stat = wait_next_event [Key_pressed] in ()
+(*                                               
    match stat.key with
    | 'a' -> let n2 = max 0 (n - 1) in 
                    (* no change *)
@@ -830,15 +826,34 @@ let rec event_loop2 n robots () =
    | 'd' -> let next_vals = after_silent wid hgt 1 robots () in 
              event_loop2 (n + 1) next_vals () 
    | _ -> ()
+*)
+                                               
+
+let wid = 101
+
+let hgt = 103 
 
 (* start up the event loop with initial robot positions  *)
-let () = event_loop2 0 vals ()
+let run () =    open_graph "" ;
+   resize_window width height ;
+   set_window_title "hello world";
+  (* event_loop2 0 vals () ; *)
+  let _ = List.map [ 7055 ; 17458 ; 27861 ; 38264 ; 48667 ; 59070 ; 69473 ;
+             79876 ; 90279 ; 100682 ; 111085 ; 121488 ; 131891 ;
+             142294 ; 152697 ; 163100 ; 173503  ]
+     ~f:(fun n ->  event_loop2 n (after_silent wid hgt n vals ()) () ) in
+       (* shut down window  *)
+       Graphics.close_graph () 
 
-(* shut down window  *)
-let () = 
-   Graphics.close_graph () 
+(*
+   some christmas trees at 
 
+[ 7055 ; 17458 ; 27861 ; 38264 ; 48667 ; 59070 ; 69473 ; 79876 ; 90279 ; 100682 ; 111085 ; 121488 ; 131891 ;
+142294 ; 152697 ; 163100 ; 173503  ]
 
+   
+
+   *)
 
 
 
