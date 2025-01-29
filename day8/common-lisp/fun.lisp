@@ -107,12 +107,14 @@ can we visually check this
                 ))))))
     nodes))
 
+
 (defun find-anti-nodes ()
   (let ((letters (find-letters))
         (all-nodes '()))
     (dolist (letter letters)
       (let* ((locations (find-locations letter))
-             (nodes (pair-locations locations)))
+             (nodes (pair-locations locations letter)))
+        ;; 
         (dolist (node nodes)
           (when (not(member node all-nodes :test 'equalp))
             (setq all-nodes (cons node all-nodes))))))
