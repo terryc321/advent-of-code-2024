@@ -36,11 +36,13 @@
   (list a b))
 
 
+
 ;; fill-region then format region 
 (define computers '( kh-tc qp-kh de-cg ka-co yn-aq qp-ub cg-tb vc-aq
 		     tb-ka wh-tc yn-cg kh-ub ta-co de-co tc-td tb-wq wh-td ta-ka td-qp
 		     aq-cg wq-ub ub-vc de-ta wq-aq wq-vc wh-yn ka-de kh-ta co-tc wh-qp
 		     tb-vc td-yn ))
+
 
 
 (set! computers '(
@@ -351,9 +353,7 @@ na-lm mx-xc of-gy ju-wp tm-yf er-ns wp-es kw-hv fi-mt wa-nm mc-hq
 cf-fl yt-gg xi-iv dm-au if-ip xu-bq yr-fh wy-mp bq-uq cj-no xp-wi
 sb-oy cs-so rh-mi fp-ja ds-bs ys-rl hu-jv jq-tn xp-ho wa-hc af-ph
 yl-ow mi-pe wy-qt ph-po rn-kb oy-wu mf-kl uj-cl rl-iy ys-hn oe-gi
-xr-ts xm-jt qw-zm
-
-		  ))
+xr-ts xm-jt qw-zm		  ))
 
 
 
@@ -437,6 +437,15 @@ xr-ts xm-jt qw-zm
 
 
 (define triple-hash (make-hash-table))
+(define quarantine-hash (make-hash-table))
+
+(define (in-quarantine? s)
+  (hash-table-ref/default quarantine-hash s #f))
+;;when we put all symbols into quarantine we do not look at them again
+
+(define (insert-quarantine! s)
+  (hash-table-set! quarantine-hash s #t))
+
 
 ;; three connected
 (define (connects3 c1)
@@ -468,6 +477,117 @@ xr-ts xm-jt qw-zm
   (hash-table-keys triple-hash))
 
 
+(define (connected? c1 c2)
+  (let* ((val (hash-table-ref/default computers-pair c1 '())))
+    (cond
+     ((null? val) val)
+     (#t (hash-table-ref/default val c2 #f)))))
+
+
+;; if all connected then a single computer must be connected to every other computer
+;; the largest group must include this most connected ?
+;; every member in the group is connected to every other member in group
+;;
+;; all be same length 
+;; A -> B C D ... Z
+;; Z -> A B C D ..Y
+;;
+;;
+;; take the list of
+;; (define (expanding s)
+;;   (expanding2 s '()))
+
+;; (define (expanding2 s gup)
+;;   (
+(define (heuristic) (map (lambda (x) (length (connects x))) (comp-list)))
+;; (13 13 13 13 13 13 13 13 13 13 13 13 13 13 13 13 13 13 13 13 ...)
+;; every computer is connected to 13 other computers , just depends which one ..
+
+
+;; if we get to have say 12 computers but cannot reach 13 then we know this set of 12
+;; computers cannot be 
+(define longest 0)
+
+(define (bootstrap)
+  (do-list (c (comp-list))
+	   (cond
+	    ((in-quarantine? c) #f)
+	    (#t
+	     (stage2 (list c) (connects c) 1)))))
+
+
+(define (stage2 seen new len)
+  (cond
+   ((> len 11)
+    (fmt #t "seen ~a : ~a~%" len seen)
+    (set! longest len))
+   ((= len 12)
+    (stage3 seen len))
+   ((> len longest)
+    (fmt #t "seen ~a : ~a~%" len seen)
+    (set! longest len)))
+  
+    (do-list (n new) ;; take a new computer , this computer n must conncet with all c have seen
+	     (call/cc (lambda (next)
+			(do-list (c seen)
+				 (cond
+				  ((in-quarantine? c) (next #f)) ;; if either c or n is in quarantine 
+				  ((in-quarantine? n) (next #f)) ;; just abort the loop				  
+				  ((connected? n c) #t)
+				  (#t (next #f))))
+			(stage2 (cons n seen) (connects n) (+ len 1))))))
+
+
+;; stage 3 where we can eliminate 
+(define (stage3 seen len)
+  (fmt #t "* stage 3 *seen ~a : ~a~%" len seen)
+  (call/cc (lambda (baulk)
+	     (do-list (s seen)
+		      (when (not (in-quarantine? s))
+			(let ((cs (connects s))
+			      (solved #f))
+			  (fmt #t "* cs ~a ~%" cs)
+			  (call/cc (lambda (skip)
+				     (do-list (c cs)
+					      (cond
+					       ((not (member c seen))
+						(do-list (s seen)
+							 (cond
+							  ((not (connected? s c))
+							   (skip #t)))))))
+				     (fmt #t "*** found a solution ***~a ~%" (cons c seen))
+				     (set! solved #t)
+				     ))
+			  (cond
+			   ((not solved)
+			    (fmt #t "*** eliminating ~a ~%" seen)
+			    (do-list (s seen)
+				     (insert-quarantine! s))
+			    (baulk #t)))))))))
+
+  
+
+;; sort alphabetically
+(define (sort-alpha xs)
+  (map (lambda (x) (fmt #t "~a," x)) (sort (map symbol->string xs) string<?))
+  #f
+  (fmt #t "~%"))
+
+
+(sort-alpha '(je up ph bz af ux ox dd ol mo wx po))
+
+
+  
+
+		      
+;;(bootstrap)
+
+
+
+
+
+
+
 
 #|
 
@@ -483,4 +603,20 @@ theres 1064 triples apparently ...
 
 
 |#
+
+;; find all the maximally connected computers
+;; a -> b ....
+;;      b -> c . .
+;;          a-c
+;;           c -> d ...
+;;               a-d b-d
+;;                d -> e
+;;                    a-e b-e c-e
+;;                     e -> f
+;;                         a-f b-f c-f d-f
+;;                             ... until no more connections
+
+
+
+
 
