@@ -485,7 +485,99 @@ robot-2 starts at (keypad2->pos 'a)
 		    xs))))
 
 
+;;
+;;(test-robot-3 "029a")
 
+(define (part-1-example)
+
+  (define codes (list "029A" "980A" "179A" "456A" "379A"))
+  (define vals (list 29 980 179 456 379))
+  (define code-vals (map list codes vals))
+  (define len-code-vals (map (lambda (code-val)
+			       (test-robot-3 (first code-val))
+			       (list robot-3-best (second code-val))) code-vals))
+
+  (define solution-vals (map (lambda (x) (apply * x)) len-code-vals))
+  (define solution (apply + solution-vals))
+
+
+  (format #t "codes ~a~%" codes)
+  (format #t "vals ~a~%" vals)
+  (format #t "code-vals ~a~%" code-vals)
+  (format #t "len-code-vals ~a~%" len-code-vals)
+  (format #t "solution-vals ~a~%" solution-vals)
+  (format #t "solution ~a~%" solution)
+  )
+
+(define (part-1-solution)
+  (define codes (list "839A" "169A" "579A" "670A" "638A"))
+  (define vals (list 839 169 579 670 638))
+  (define code-vals (map list codes vals))
+  (define len-code-vals (map (lambda (code-val)
+			       (test-robot-3 (first code-val))
+			       (list robot-3-best (second code-val))) code-vals))
+
+  (define solution-vals (map (lambda (x) (apply * x)) len-code-vals))
+  (define solution (apply + solution-vals))
+
+
+  (format #t "codes ~a~%" codes)
+  (format #t "vals ~a~%" vals)
+  (format #t "code-vals ~a~%" code-vals)
+  (format #t "len-code-vals ~a~%" len-code-vals)
+  (format #t "solution-vals ~a~%" solution-vals)
+  (format #t "solution ~a~%" solution)
+  )
+
+;; 
+(part-1-solution)
+
+
+#|
+
+using chicken scheme compile this file
+csc -o fun fun.scm
+
+...
+...
+
+soln : v<<A>^>AvA^Av<A<AA>^>AAvA^<A>AAvA^Av<A^>AA<A>Av<<A>A>^AAAvA^<A>A
+soln : v<<A>^>AvA^Av<A<AA>^>AAvA^<A>AAvA^Av<A^>AA<A>Av<<A>A^>AAAvA<^A>A
+soln : v<<A>^>AvA^Av<A<AA>^>AAvA^<A>AAvA^Av<A^>AA<A>Av<<A>A^>AAAvA^<A>A
+codes (029A 980A 179A 456A 379A)
+vals (29 980 179 456 379)
+code-vals ((029A 29) (980A 980) (179A 179) (456A 456) (379A 379))
+len-code-vals ((68 29) (60 980) (68 179) (64 456) (64 379))
+solution-vals (1972 58800 12172 29184 24256)
+solution 126384
+
+real	0m7.246s
+user	0m6.446s
+sys	0m0.799s
+
+
+839A
+169A
+579A
+670A
+638A
+
+soln : v<<A>^>AAvA^Av<<A>A^>AvA^<A>Av<A<AA>^>AvA^<A>AAvA^A<v<A>A^>AAAvA^A<A>A
+soln : v<<A>^>AAvA^Av<<A>A^>AvA^<A>Av<A<AA>^>AvA^<A>AAvA^Av<<A>A>^AAAvA^A<A>A
+soln : v<<A>^>AAvA^Av<<A>A^>AvA^<A>Av<A<AA>^>AvA^<A>AAvA^Av<<A>A^>AAAvA^A<A>A
+codes (839A 169A 579A 670A 638A)
+vals (839 169 579 670 638)
+code-vals ((839A 839) (169A 169) (579A 579) (670A 670) (638A 638))
+len-code-vals ((72 839) (76 169) (72 579) (68 670) (70 638))
+solution-vals (60408 12844 41688 45560 44660)
+solution 205160
+
+real	1m27.907s
+user	1m24.255s
+sys	0m3.641s
+
+
+|#
 
 
 
