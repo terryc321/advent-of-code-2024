@@ -1,0 +1,1 @@
+(s (r (assigns x00 : (bool 1))) (r (assigns x01 : (bool 1))) (r (assigns x02 : (bool 1))) (r (assigns y00 : (bool 0))) (r (assigns y01 : (bool 1))) (r (assigns y02 : (bool 0))) (r (and x00 AND y00 -> z00)) (r (xor x01 XOR y01 -> z01)) (r (or x02 OR y02 -> z02)))
