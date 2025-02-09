@@ -1,0 +1,35 @@
+
+(* if want to try to solve wiring puzzle
+   ocaml types 0 1 okay
+   if want to say has no useful value then option type None or Some n
+
+   if all z values are determined
+   [z1 , z2
+   List.filter (fun x -> match (!x) with | Some _ -> true | _ -> false) [x01; x02; x03];;
+   List.filter (fun x -> match (!x) with | Some _ -> true | _ -> false) [z00 ; z01; z02; z03];;
+
+   then convert to binary value 
+   
+*)
+
+(* (\* variable is either known or unknown at the moment *\) *)
+(* let x01 = ref (Some 0);; *)
+(* let x02 = ref (Some 1);; *)
+(* let x03 = ref None;; *)
+
+
+(* !x01 ;; *)
+(* all variables get initial setting None *)
+(* x01 := None ;; *)
+(* !x01 ;; *)
+
+
+(*
+if either x or y not determined yet , say nothing
+if both determined then say the result
+think about single assignment
+
+   iand x01 x02 x03 ;;  if x01 and x02 have Some value , then x03 will also then get a value
+   simply keep looping until all have values
+*)
+
