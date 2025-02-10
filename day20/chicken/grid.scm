@@ -33,7 +33,6 @@
 
 
 
-
 ;; (for (i from to by) ...)
 ;;
 ;; from 10 downto 1 by -2 , right think that -2 steps ,
@@ -243,8 +242,8 @@
       (set! this
 	(lambda (op . args)
 	  (cond
-	   ((eq? op 'attr) (attr args)) ;; attributes 
-	   ((eq? op 'attr!) (attr! args))
+	   ;; ((eq? op 'attr) (attr args)) ;; attributes 
+	   ;; ((eq? op 'attr!) (attr! args))
 	   
 	   ((eq? op 'wid) wid)
 	   ((eq? op 'hgt) hgt)
@@ -448,6 +447,8 @@
 	 (end (g 'end))
 	 (wid (g 'wid))
 	 (hgt (g 'hgt))
+	 (working '())
+	 (pending (list start))
 	 (did-set #f))
 
     ;; try put an integer at x y where there is an empty #\. char 
@@ -461,22 +462,32 @@
 			  (cond
 			   ((and (char? ch) (char=? ch #\.)) ;; empty square - place integer there
 			    (set! did-set #t)
+			    (set! pending (cons (list x y) pending))
 			    (g 'set! x y n))
 			   ((and (integer? ch) (< n ch)) ;; an integer here
 			    ;; unlikely this ever gets executed because all values updated in one fell swoop
-			    (fmt #t "found better value for square ~a ~a" x y)
+			    ;;(fmt #t "found better value for square ~a ~a" x y)
+			    (set! pending (cons (list x y) pending))			    
 			    (set! did-set #t)
 			    (g 'set! x y n))))))))
 	     ;; otherwise i dont care #\# wall or border of grid
 	     (forward (lambda (n)
-			(for (x 1 wid)
-			  (for (y 1 hgt)
-			    (let ((ch (g 'get x y)))
-			      (when (and (integer? ch) (= ch n))
-				(go (- x 1) y (+ n 1))
-				(go (+ x 1) y (+ n 1))
-				(go  x (- y 1) (+ n 1))
-				(go  x (+ y 1) (+ n 1))))))
+
+			(set! working pending)
+			(set! pending '())
+			;; 
+			(do-list (pos working)
+				 (bind (x y) pos
+			
+				       ;; (for (x 1 wid)
+				       ;;   (for (y 1 hgt)
+				       (let ((ch (g 'get x y)))
+					 (when (and (integer? ch) (= ch n))
+					   (go (- x 1) y (+ n 1))
+					   (go (+ x 1) y (+ n 1))
+					   (go  x (- y 1) (+ n 1))
+					   (go  x (+ y 1) (+ n 1))))))
+			
 			;; use a flag to tell us if we set anything otherwise loop forever
 			(when did-set 
 			  (set! did-set #f)
@@ -487,6 +498,7 @@
       ;; loop again looking for squares labelled 1 and all four directions , label then 2
       ;; so on
       (forward 0)
+      
       (bind (xe ye) end
 	    (let ((exit (g 'get xe ye)))
 	      ;;(fmt #t "exit at ~a ~%" exit)
@@ -496,49 +508,127 @@
 
 
 (define g (populate grid-list))
-(define g2 (copy-grid g))
 
-(g 'show)
+;; (define g2 (copy-grid g))
 
-(g 'get 2 4)
-(g 'start)
-(g 'end)
-(wander! g)
-(g 'show)
+;; (g 'show)
 
-(g2 'show)
+;; (g 'get 2 4)
+;; (g 'start)
+;; (g 'end)
+;; (wander! g)
+;; (g 'show)
+;; (g2 'show)
+
+
+
+;; if we do not need to store actually coordinates that give rise to the solution
+;; we can just increment a value
+;; could parallelize this program by having each program take its own data set to work on 
+;; no communication , totally seperate processes , true parallelism 
+;; then when all processes have completed
+;; we can look at the output of the programs
+;;
+;; need a program to figure out the distribution of the work to different programs
+;; how will they combine their totals ?
+;; do we just need a number over 100 picoseconds ,
+;; any cheat square that scores over a 100 picoseconds saved gets added to the total
+;; so entire program will just produce a single value as result
+;; represents number of cheat squares that produced a saving of 100 picoseconds or more.
+;; simply need to sum up these values 
+;; (define (cheat gold)			;
+;;   (let ((start (g 'start))
+;; 	(end (g 'end))
+;; 	(wid (g 'wid))
+;; 	(hgt (g 'hgt))
+;; 	(nominal (wander! (copy-grid gold)))
+;; 	;;(hash (make-hash-table))
+;; 	(tot 0))
+;;     (for (cx 2 (- wid 1))
+;;       (for (cy 2 (- hgt 1))
+;; 	(let ((g (copy-grid gold)))
+;; 	  ;; copy grid ?
+;; 	  ;; place cheat at cx cy - an empty square
+;; 	  (g 'set! cx cy #\.)
+;; 	  ;; wander
+;; 	  (let* ((exit (wander! g))
+;; 		 (save (- nominal exit))
+;; 		 (pos (list cx cy)))
+;; 	    ;; only save if we actually saved some time
+;; 	    (when (> save 0)
+;; 	      (incf! tot))))))
+    
+;; 	    ;; ;; store location cx cy under savings key
+;; 	    ;; (let ((hv (href/d hash save #f)))
+;; 	    ;;   (cond
+;; 	    ;;    ((eq? hv #f) (hset! hash save (list pos)))
+;; 	    ;;    ((member pos hv) #f)
+;; 	    ;;    (#t (hset! hash save (cons pos hv))))))))))
+    
+;;     ;; for each - list them out in some order?
+;;     ;; (do-list (save (hkeys hash))
+;;     ;; 	     (let ((coords (href hash save)))
+;;     ;; 	       (format #t "there are ~a solutions saving ~a picoseconds~%" (length coords) save)))
+;;     (format #t "total number of squares that resulted in a saving were ~a~%" tot)
+;;     tot))
 
 
 (define (cheat gold)
-  (let ((start (g 'start))
+  (let* ((start (g 'start))
 	(end (g 'end))
 	(wid (g 'wid))
 	(hgt (g 'hgt))
 	(nominal (wander! (copy-grid gold)))
-	(hash (make-hash-table)))
+	;;(hash (make-hash-table))
+	(hash2 (make-hash-table))
+	(step 0)
+	(total-steps (* (- wid 1)(- hgt 1)))
+	(tot 0))
     (for (cx 2 (- wid 1))
       (for (cy 2 (- hgt 1))
 	(let ((g (copy-grid gold)))
 	  ;; copy grid ?
 	  ;; place cheat at cx cy - an empty square
 	  (g 'set! cx cy #\.)
+
+	  
+	  (when (zero? (modulo step 100)) (format #t "progress ... wander ~a of ~a ~%" step total-steps))
+	  (incf! step)
+	  
 	  ;; wander
 	  (let* ((exit (wander! g))
 		 (save (- nominal exit))
 		 (pos (list cx cy)))
 	    ;; only save if we actually saved some time
-	    (when (> save 0)
+	    (when (>= save 100)
+	          
 	    ;; store location cx cy under savings key
-	    (let ((hv (href/d hash save #f)))
+	    (let ((hv (href/d hash2 save #f)))
 	      (cond
-	       ((eq? hv #f) (hset! hash save (list pos)))
-	       ((member pos hv) #f)
-	       (#t (hset! hash save (cons pos hv))))))))))
+	       ((eq? hv #f)
+		;;(hset! hash save (list pos))
+		(hset! hash2 save 1)
+		)
+	       ;; ((member pos hv)
+	       ;; 	(format #t "this square already counted ~%")
+	       ;; 	#f)
+	       (#t
+		;;(hset! hash save (cons pos hv))
+		(hset! hash2 save (+ 1 (href hash2 save)))
+		))))))))
     
     ;; for each - list them out in some order?
-    (do-list (save (hkeys hash))
-	     (let ((coords (href hash save)))
-	       (format #t "there are ~a solutions saving ~a picoseconds~%" (length coords) save)))))
+    (set! tot 0)
+    (do-list (save (hkeys hash2))
+	     (let* (;;(coords (href hash save))
+		    ;;(len (length coords))
+		    (len2 (href hash2 save)))
+	       (set! tot (+ tot len2))	       
+	       ;;(format #t "there are ~a : ~a solutions saving ~a picoseconds~%" len len2 save)
+	       (format #t "there are ~a solutions saving ~a picoseconds~%" len2 save)
+	       ))
+    (format #t "THE SOLUTION LOOKING FOR SHOULD BE ~a SOLUTIONS in total saving more than or equal to 100 picosecnds~%" tot)    
+    tot))
 
 
 	  
@@ -548,10 +638,27 @@
     (cheat g)))
 
 
+;; %%%%%%%%%%%%%%%%%% single core takes 3 seconds %%%%%%%%%%%%%%%%%%%
+;; #;1825> ,t (part-1)
+;; there are 1 solutions saving 64 picoseconds
+;; there are 3 solutions saving 12 picoseconds
+;; there are 2 solutions saving 10 picoseconds
+;; there are 4 solutions saving 8 picoseconds
+;; there are 2 solutions saving 6 picoseconds
+;; there are 14 solutions saving 4 picoseconds
+;; there are 14 solutions saving 2 picoseconds
+;; there are 1 solutions saving 20 picoseconds
+;; there are 1 solutions saving 40 picoseconds
+;; there are 1 solutions saving 38 picoseconds
+;; there are 1 solutions saving 36 picoseconds
+;; 3.114s CPU time, 0.212s GC time (major), 2654156/212942 mutations (total/tracked), 33/81764 GCs (major/minor), maximum live heap: 10.91 MiB
+;; 44
+
+
+
+
 ;; run this 
 (part-1)
-
-
 
 ;; ;; %%%%%%%%%%% the cheat %%%%%%%%%%%%%%%%%%%%
 ;; ;; given grid g3 -> make g g2 copies , can mutate g g2 without worry g3 corrupt
@@ -631,4 +738,463 @@
 ;;       (fmt #t "There are ~a cheats that save 100 picoseconds~%" tot))))
 
 
+#|
+there are 1 solutions saving 9300 picoseconds
+there are 1 solutions saving 9312 picoseconds
+there are 1 solutions saving 9332 picoseconds
+there are 1 solutions saving 9330 picoseconds
+there are 1 solutions saving 9328 picoseconds
+there are 1 solutions saving 9412 picoseconds
+there are 1 solutions saving 9410 picoseconds
+there are 1 solutions saving 9408 picoseconds
+there are 1 solutions saving 582 picoseconds
+there are 3 solutions saving 580 picoseconds
+there are 2 solutions saving 578 picoseconds
+there are 4 solutions saving 576 picoseconds
+there are 1 solutions saving 590 picoseconds
+there are 1 solutions saving 588 picoseconds
+there are 2 solutions saving 584 picoseconds
+there are 2 solutions saving 596 picoseconds
+there are 2 solutions saving 592 picoseconds
+there are 1 solutions saving 606 picoseconds
+there are 2 solutions saving 604 picoseconds
+there are 2 solutions saving 602 picoseconds
+there are 2 solutions saving 600 picoseconds
+there are 1 solutions saving 614 picoseconds
+there are 2 solutions saving 612 picoseconds
+there are 2 solutions saving 610 picoseconds
+there are 2 solutions saving 608 picoseconds
+there are 1 solutions saving 620 picoseconds
+there are 1 solutions saving 618 picoseconds
+there are 1 solutions saving 9380 picoseconds
+there are 2 solutions saving 616 picoseconds
+there are 2 solutions saving 628 picoseconds
+there are 1 solutions saving 9388 picoseconds
+there are 2 solutions saving 624 picoseconds
+there are 1 solutions saving 9386 picoseconds
+there are 1 solutions saving 638 picoseconds
+there are 1 solutions saving 9384 picoseconds
+there are 2 solutions saving 636 picoseconds
+there are 1 solutions saving 9398 picoseconds
+there are 1 solutions saving 9396 picoseconds
+there are 1 solutions saving 632 picoseconds
+there are 1 solutions saving 9392 picoseconds
+there are 2 solutions saving 516 picoseconds
+there are 3 solutions saving 512 picoseconds
+there are 1 solutions saving 526 picoseconds
+there are 1 solutions saving 9400 picoseconds
+there are 3 solutions saving 524 picoseconds
+there are 3 solutions saving 522 picoseconds
+there are 3 solutions saving 520 picoseconds
+there are 1 solutions saving 534 picoseconds
+there are 4 solutions saving 532 picoseconds
+there are 3 solutions saving 530 picoseconds
+there are 3 solutions saving 528 picoseconds
+there are 1 solutions saving 542 picoseconds
+there are 1 solutions saving 540 picoseconds
+there are 1 solutions saving 536 picoseconds
+there are 1 solutions saving 548 picoseconds
+there are 1 solutions saving 544 picoseconds
+there are 2 solutions saving 558 picoseconds
+there are 3 solutions saving 556 picoseconds
+there are 2 solutions saving 554 picoseconds
+there are 2 solutions saving 552 picoseconds
+there are 2 solutions saving 566 picoseconds
+there are 3 solutions saving 564 picoseconds
+there are 1 solutions saving 562 picoseconds
+there are 2 solutions saving 560 picoseconds
+there are 1 solutions saving 574 picoseconds
+there are 4 solutions saving 572 picoseconds
+there are 3 solutions saving 570 picoseconds
+there are 4 solutions saving 568 picoseconds
+there are 1 solutions saving 710 picoseconds
+there are 1 solutions saving 708 picoseconds
+there are 1 solutions saving 704 picoseconds
+there are 1 solutions saving 718 picoseconds
+there are 1 solutions saving 716 picoseconds
+there are 1 solutions saving 712 picoseconds
+there are 1 solutions saving 726 picoseconds
+there are 1 solutions saving 724 picoseconds
+there are 1 solutions saving 722 picoseconds
+there are 2 solutions saving 720 picoseconds
+there are 2 solutions saving 732 picoseconds
+there are 1 solutions saving 730 picoseconds
+there are 2 solutions saving 728 picoseconds
+there are 1 solutions saving 740 picoseconds
+there are 2 solutions saving 748 picoseconds
+there are 1 solutions saving 746 picoseconds
+there are 1 solutions saving 744 picoseconds
+there are 1 solutions saving 756 picoseconds
+there are 1 solutions saving 754 picoseconds
+there are 1 solutions saving 752 picoseconds
+there are 1 solutions saving 640 picoseconds
+there are 1 solutions saving 660 picoseconds
+there are 1 solutions saving 658 picoseconds
+there are 1 solutions saving 656 picoseconds
+there are 1 solutions saving 676 picoseconds
+there are 1 solutions saving 674 picoseconds
+there are 1 solutions saving 672 picoseconds
+there are 2 solutions saving 692 picoseconds
+there are 1 solutions saving 690 picoseconds
+there are 1 solutions saving 688 picoseconds
+there are 2 solutions saving 700 picoseconds
+there are 2 solutions saving 698 picoseconds
+there are 2 solutions saving 696 picoseconds
+there are 1 solutions saving 844 picoseconds
+there are 1 solutions saving 842 picoseconds
+there are 1 solutions saving 840 picoseconds
+there are 1 solutions saving 852 picoseconds
+there are 1 solutions saving 862 picoseconds
+there are 2 solutions saving 860 picoseconds
+there are 1 solutions saving 858 picoseconds
+there are 1 solutions saving 856 picoseconds
+there are 1 solutions saving 864 picoseconds
+there are 1 solutions saving 806 picoseconds
+there are 1 solutions saving 804 picoseconds
+there are 1 solutions saving 808 picoseconds
+there are 1 solutions saving 1000 picoseconds
+there are 1 solutions saving 2636 picoseconds
+there are 1 solutions saving 2634 picoseconds
+there are 1 solutions saving 2632 picoseconds
+there are 1 solutions saving 2644 picoseconds
+there are 1 solutions saving 916 picoseconds
+there are 1 solutions saving 914 picoseconds
+there are 1 solutions saving 912 picoseconds
+there are 1 solutions saving 926 picoseconds
+there are 1 solutions saving 924 picoseconds
+there are 1 solutions saving 928 picoseconds
+there are 1 solutions saving 950 picoseconds
+there are 1 solutions saving 948 picoseconds
+there are 1 solutions saving 946 picoseconds
+there are 1 solutions saving 944 picoseconds
+there are 1 solutions saving 952 picoseconds
+there are 10 solutions saving 102 picoseconds
+there are 23 solutions saving 100 picoseconds
+there are 9 solutions saving 110 picoseconds
+there are 24 solutions saving 108 picoseconds
+there are 12 solutions saving 106 picoseconds
+there are 22 solutions saving 104 picoseconds
+there are 8 solutions saving 118 picoseconds
+there are 23 solutions saving 116 picoseconds
+there are 9 solutions saving 114 picoseconds
+there are 19 solutions saving 112 picoseconds
+there are 9 solutions saving 126 picoseconds
+there are 15 solutions saving 124 picoseconds
+there are 8 solutions saving 122 picoseconds
+there are 17 solutions saving 120 picoseconds
+there are 3 solutions saving 198 picoseconds
+there are 7 solutions saving 196 picoseconds
+there are 4 solutions saving 194 picoseconds
+there are 11 solutions saving 192 picoseconds
+there are 4 solutions saving 206 picoseconds
+there are 10 solutions saving 204 picoseconds
+there are 5 solutions saving 202 picoseconds
+there are 11 solutions saving 200 picoseconds
+there are 2 solutions saving 214 picoseconds
+there are 8 solutions saving 212 picoseconds
+there are 4 solutions saving 210 picoseconds
+there are 10 solutions saving 208 picoseconds
+there are 3 solutions saving 222 picoseconds
+there are 6 solutions saving 220 picoseconds
+there are 1 solutions saving 218 picoseconds
+there are 4 solutions saving 216 picoseconds
+there are 3 solutions saving 230 picoseconds
+there are 8 solutions saving 228 picoseconds
+there are 4 solutions saving 226 picoseconds
+there are 9 solutions saving 224 picoseconds
+there are 2 solutions saving 238 picoseconds
+there are 4 solutions saving 236 picoseconds
+there are 6 solutions saving 232 picoseconds
+there are 2 solutions saving 246 picoseconds
+there are 9 solutions saving 244 picoseconds
+there are 7 solutions saving 242 picoseconds
+there are 10 solutions saving 240 picoseconds
+there are 7 solutions saving 254 picoseconds
+there are 9 solutions saving 252 picoseconds
+there are 1 solutions saving 250 picoseconds
+there are 6 solutions saving 248 picoseconds
+there are 10 solutions saving 134 picoseconds
+there are 15 solutions saving 132 picoseconds
+there are 8 solutions saving 130 picoseconds
+there are 19 solutions saving 128 picoseconds
+there are 9 solutions saving 142 picoseconds
+there are 19 solutions saving 140 picoseconds
+there are 8 solutions saving 138 picoseconds
+there are 19 solutions saving 136 picoseconds
+there are 5 solutions saving 150 picoseconds
+there are 14 solutions saving 148 picoseconds
+there are 2 solutions saving 146 picoseconds
+there are 13 solutions saving 144 picoseconds
+there are 4 solutions saving 158 picoseconds
+there are 11 solutions saving 156 picoseconds
+there are 4 solutions saving 154 picoseconds
+there are 16 solutions saving 152 picoseconds
+there are 6 solutions saving 166 picoseconds
+there are 13 solutions saving 164 picoseconds
+there are 5 solutions saving 162 picoseconds
+there are 10 solutions saving 160 picoseconds
+there are 6 solutions saving 174 picoseconds
+there are 13 solutions saving 172 picoseconds
+there are 6 solutions saving 170 picoseconds
+there are 13 solutions saving 168 picoseconds
+there are 6 solutions saving 182 picoseconds
+there are 13 solutions saving 180 picoseconds
+there are 5 solutions saving 178 picoseconds
+there are 10 solutions saving 176 picoseconds
+there are 6 solutions saving 190 picoseconds
+there are 14 solutions saving 188 picoseconds
+there are 6 solutions saving 186 picoseconds
+there are 14 solutions saving 184 picoseconds
+there are 1 solutions saving 326 picoseconds
+there are 1 solutions saving 324 picoseconds
+there are 6 solutions saving 320 picoseconds
+there are 2 solutions saving 334 picoseconds
+there are 2 solutions saving 332 picoseconds
+there are 1 solutions saving 328 picoseconds
+there are 5 solutions saving 342 picoseconds
+there are 6 solutions saving 340 picoseconds
+there are 1 solutions saving 7814 picoseconds
+there are 1 solutions saving 338 picoseconds
+there are 1 solutions saving 7812 picoseconds
+there are 2 solutions saving 336 picoseconds
+there are 1 solutions saving 350 picoseconds
+there are 1 solutions saving 7808 picoseconds
+there are 3 solutions saving 348 picoseconds
+there are 2 solutions saving 346 picoseconds
+there are 7 solutions saving 344 picoseconds
+there are 4 solutions saving 358 picoseconds
+there are 1 solutions saving 7816 picoseconds
+there are 5 solutions saving 356 picoseconds
+there are 2 solutions saving 354 picoseconds
+there are 2 solutions saving 352 picoseconds
+there are 3 solutions saving 366 picoseconds
+there are 5 solutions saving 364 picoseconds
+there are 2 solutions saving 362 picoseconds
+there are 6 solutions saving 360 picoseconds
+there are 3 solutions saving 374 picoseconds
+there are 5 solutions saving 372 picoseconds
+there are 3 solutions saving 370 picoseconds
+there are 6 solutions saving 368 picoseconds
+there are 1 solutions saving 382 picoseconds
+there are 5 solutions saving 380 picoseconds
+there are 3 solutions saving 378 picoseconds
+there are 7 solutions saving 376 picoseconds
+there are 1 solutions saving 262 picoseconds
+there are 6 solutions saving 260 picoseconds
+there are 3 solutions saving 258 picoseconds
+there are 11 solutions saving 256 picoseconds
+there are 1 solutions saving 270 picoseconds
+there are 6 solutions saving 268 picoseconds
+there are 3 solutions saving 266 picoseconds
+there are 4 solutions saving 264 picoseconds
+there are 1 solutions saving 278 picoseconds
+there are 4 solutions saving 276 picoseconds
+there are 2 solutions saving 274 picoseconds
+there are 4 solutions saving 272 picoseconds
+there are 3 solutions saving 286 picoseconds
+there are 5 solutions saving 284 picoseconds
+there are 1 solutions saving 282 picoseconds
+there are 3 solutions saving 280 picoseconds
+there are 1 solutions saving 294 picoseconds
+there are 7 solutions saving 292 picoseconds
+there are 1 solutions saving 290 picoseconds
+there are 8 solutions saving 288 picoseconds
+there are 1 solutions saving 302 picoseconds
+there are 5 solutions saving 300 picoseconds
+there are 2 solutions saving 298 picoseconds
+there are 5 solutions saving 296 picoseconds
+there are 2 solutions saving 310 picoseconds
+there are 4 solutions saving 308 picoseconds
+there are 3 solutions saving 306 picoseconds
+there are 3 solutions saving 304 picoseconds
+there are 4 solutions saving 318 picoseconds
+there are 6 solutions saving 316 picoseconds
+there are 2 solutions saving 314 picoseconds
+there are 5 solutions saving 312 picoseconds
+there are 2 solutions saving 454 picoseconds
+there are 3 solutions saving 452 picoseconds
+there are 2 solutions saving 448 picoseconds
+there are 2 solutions saving 460 picoseconds
+there are 1 solutions saving 458 picoseconds
+there are 3 solutions saving 456 picoseconds
+there are 2 solutions saving 470 picoseconds
+there are 3 solutions saving 468 picoseconds
+there are 1 solutions saving 466 picoseconds
+there are 1 solutions saving 464 picoseconds
+there are 3 solutions saving 478 picoseconds
+there are 4 solutions saving 476 picoseconds
+there are 1 solutions saving 474 picoseconds
+there are 3 solutions saving 472 picoseconds
+there are 1 solutions saving 486 picoseconds
+there are 3 solutions saving 484 picoseconds
+there are 2 solutions saving 482 picoseconds
+there are 4 solutions saving 480 picoseconds
+there are 3 solutions saving 492 picoseconds
+there are 1 solutions saving 490 picoseconds
+there are 3 solutions saving 488 picoseconds
+there are 1 solutions saving 500 picoseconds
+there are 1 solutions saving 496 picoseconds
+there are 2 solutions saving 510 picoseconds
+there are 2 solutions saving 508 picoseconds
+there are 1 solutions saving 506 picoseconds
+there are 2 solutions saving 504 picoseconds
+there are 4 solutions saving 388 picoseconds
+there are 3 solutions saving 386 picoseconds
+there are 5 solutions saving 384 picoseconds
+there are 1 solutions saving 396 picoseconds
+there are 1 solutions saving 392 picoseconds
+there are 2 solutions saving 404 picoseconds
+there are 1 solutions saving 402 picoseconds
+there are 1 solutions saving 2158 picoseconds
+there are 1 solutions saving 400 picoseconds
+there are 1 solutions saving 2156 picoseconds
+there are 1 solutions saving 414 picoseconds
+there are 3 solutions saving 412 picoseconds
+there are 1 solutions saving 410 picoseconds
+there are 1 solutions saving 408 picoseconds
+there are 1 solutions saving 422 picoseconds
+there are 1 solutions saving 420 picoseconds
+there are 1 solutions saving 2160 picoseconds
+there are 4 solutions saving 416 picoseconds
+there are 1 solutions saving 430 picoseconds
+there are 3 solutions saving 428 picoseconds
+there are 1 solutions saving 424 picoseconds
+there are 1 solutions saving 438 picoseconds
+there are 2 solutions saving 436 picoseconds
+there are 1 solutions saving 432 picoseconds
+there are 1 solutions saving 446 picoseconds
+there are 3 solutions saving 444 picoseconds
+there are 1 solutions saving 2056 picoseconds
+there are 1 solutions saving 442 picoseconds
+there are 2 solutions saving 440 picoseconds
+there are 1 solutions saving 9038 picoseconds
+there are 1 solutions saving 9036 picoseconds
+there are 1 solutions saving 9040 picoseconds
+there are 1 solutions saving 2084 picoseconds
+there are 1 solutions saving 2082 picoseconds
+there are 1 solutions saving 2080 picoseconds
+there are 1 solutions saving 9070 picoseconds
+there are 1 solutions saving 9068 picoseconds
+there are 1 solutions saving 2096 picoseconds
+there are 1 solutions saving 9066 picoseconds
+there are 1 solutions saving 9064 picoseconds
+there are 1 solutions saving 9076 picoseconds
+there are 1 solutions saving 9074 picoseconds
+there are 1 solutions saving 9072 picoseconds
+there are 1 solutions saving 2260 picoseconds
+there are 1 solutions saving 7244 picoseconds
+there are 1 solutions saving 7242 picoseconds
+there are 1 solutions saving 2292 picoseconds
+there are 1 solutions saving 7240 picoseconds
+there are 1 solutions saving 1572 picoseconds
+there are 1 solutions saving 2288 picoseconds
+there are 1 solutions saving 1570 picoseconds
+there are 1 solutions saving 7252 picoseconds
+there are 1 solutions saving 1568 picoseconds
+there are 1 solutions saving 2300 picoseconds
+there are 1 solutions saving 2298 picoseconds
+there are 1 solutions saving 2296 picoseconds
+there are 1 solutions saving 1584 picoseconds
+there are 1 solutions saving 1596 picoseconds
+there are 1 solutions saving 2184 picoseconds
+there are 1 solutions saving 1594 picoseconds
+there are 1 solutions saving 1592 picoseconds
+there are 1 solutions saving 9152 picoseconds
+there are 1 solutions saving 2196 picoseconds
+there are 1 solutions saving 2194 picoseconds
+there are 1 solutions saving 2192 picoseconds
+there are 1 solutions saving 9102 picoseconds
+there are 1 solutions saving 9100 picoseconds
+there are 1 solutions saving 9104 picoseconds
+there are 1 solutions saving 9118 picoseconds
+there are 1 solutions saving 9116 picoseconds
+there are 1 solutions saving 9114 picoseconds
+there are 1 solutions saving 9112 picoseconds
+there are 1 solutions saving 9120 picoseconds
+there are 1 solutions saving 9132 picoseconds
+there are 1 solutions saving 7388 picoseconds
+there are 1 solutions saving 7386 picoseconds
+there are 1 solutions saving 9150 picoseconds
+there are 1 solutions saving 7384 picoseconds
+there are 2 solutions saving 9148 picoseconds
+there are 1 solutions saving 9146 picoseconds
+there are 1 solutions saving 9144 picoseconds
+there are 1 solutions saving 7404 picoseconds
+there are 1 solutions saving 7402 picoseconds
+there are 1 solutions saving 7400 picoseconds
+there are 1 solutions saving 7412 picoseconds
+there are 1 solutions saving 7408 picoseconds
+there are 1 solutions saving 7492 picoseconds
+there are 1 solutions saving 7490 picoseconds
+there are 1 solutions saving 7488 picoseconds
+there are 1 solutions saving 2536 picoseconds
+there are 1 solutions saving 2550 picoseconds
+there are 1 solutions saving 2548 picoseconds
+there are 1 solutions saving 2546 picoseconds
+there are 1 solutions saving 2544 picoseconds
+there are 1 solutions saving 2556 picoseconds
+there are 1 solutions saving 2552 picoseconds
+there are 1 solutions saving 7526 picoseconds
+there are 1 solutions saving 7524 picoseconds
+there are 1 solutions saving 7528 picoseconds
+there are 1 solutions saving 2000 picoseconds
+there are 1 solutions saving 2020 picoseconds
+there are 1 solutions saving 2028 picoseconds
+there are 1 solutions saving 8446 picoseconds
+there are 1 solutions saving 8444 picoseconds
+there are 1 solutions saving 7460 picoseconds
+there are 1 solutions saving 7476 picoseconds
+there are 1 solutions saving 7472 picoseconds
+there are 1 solutions saving 8448 picoseconds
+there are 1 solutions saving 1228 picoseconds
+there are 1 solutions saving 1226 picoseconds
+there are 1 solutions saving 1224 picoseconds
+there are 1 solutions saving 1246 picoseconds
+there are 1 solutions saving 1244 picoseconds
+there are 1 solutions saving 1248 picoseconds
+there are 1 solutions saving 4812 picoseconds
+there are 1 solutions saving 4810 picoseconds
+there are 1 solutions saving 4808 picoseconds
+there are 1 solutions saving 1196 picoseconds
+there are 1 solutions saving 4830 picoseconds
+there are 1 solutions saving 4828 picoseconds
+there are 1 solutions saving 1204 picoseconds
+there are 1 solutions saving 1202 picoseconds
+there are 1 solutions saving 4836 picoseconds
+there are 1 solutions saving 1200 picoseconds
+there are 1 solutions saving 4832 picoseconds
+there are 1 solutions saving 1350 picoseconds
+there are 1 solutions saving 1348 picoseconds
+there are 1 solutions saving 1344 picoseconds
+there are 2 solutions saving 1358 picoseconds
+there are 2 solutions saving 1356 picoseconds
+there are 1 solutions saving 1354 picoseconds
+there are 2 solutions saving 1352 picoseconds
+there are 2 solutions saving 1360 picoseconds
+there are 1 solutions saving 1404 picoseconds
+there are 1 solutions saving 4932 picoseconds
+there are 1 solutions saving 4928 picoseconds
+there are 1 solutions saving 1332 picoseconds
+there are 1 solutions saving 1330 picoseconds
+there are 1 solutions saving 1328 picoseconds
+there are 1 solutions saving 1342 picoseconds
+there are 1 solutions saving 1340 picoseconds
+there are 1 solutions saving 4974 picoseconds
+there are 1 solutions saving 4972 picoseconds
+there are 1 solutions saving 4976 picoseconds
+there are 1 solutions saving 4870 picoseconds
+there are 1 solutions saving 4868 picoseconds
+there are 1 solutions saving 4876 picoseconds
+there are 1 solutions saving 4874 picoseconds
+there are 1 solutions saving 4872 picoseconds
+there are 1 solutions saving 1428 picoseconds
+there are 1 solutions saving 1426 picoseconds
+there are 1 solutions saving 1424 picoseconds
+THE SOLUTION LOOKING FOR SHOULD BE 1358 SOLUTIONS in total saving more than or equal to 100 picosecnds
 
+real	6m50.124s
+user	6m47.514s
+sys	0m2.580s
+
+
+|#

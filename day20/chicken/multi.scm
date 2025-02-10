@@ -531,13 +531,14 @@
 	  
   
 
-
 ;; destroys the original ``grid``` with numerical values
 (define (wander! g)
   (let* ((start (g 'start))
 	 (end (g 'end))
 	 (wid (g 'wid))
 	 (hgt (g 'hgt))
+	 (working '())
+	 (pending (list start))
 	 (did-set #f))
 
     ;; try put an integer at x y where there is an empty #\. char 
@@ -551,22 +552,32 @@
 			  (cond
 			   ((and (char? ch) (char=? ch #\.)) ;; empty square - place integer there
 			    (set! did-set #t)
+			    (set! pending (cons (list x y) pending))
 			    (g 'set! x y n))
 			   ((and (integer? ch) (< n ch)) ;; an integer here
 			    ;; unlikely this ever gets executed because all values updated in one fell swoop
-			    (fmt #t "found better value for square ~a ~a" x y)
+			    ;;(fmt #t "found better value for square ~a ~a" x y)
+			    (set! pending (cons (list x y) pending))			    
 			    (set! did-set #t)
 			    (g 'set! x y n))))))))
 	     ;; otherwise i dont care #\# wall or border of grid
 	     (forward (lambda (n)
-			(for (x 1 wid)
-			  (for (y 1 hgt)
-			    (let ((ch (g 'get x y)))
-			      (when (and (integer? ch) (= ch n))
-				(go (- x 1) y (+ n 1))
-				(go (+ x 1) y (+ n 1))
-				(go  x (- y 1) (+ n 1))
-				(go  x (+ y 1) (+ n 1))))))
+
+			(set! working pending)
+			(set! pending '())
+			;; 
+			(do-list (pos working)
+				 (bind (x y) pos
+			
+				       ;; (for (x 1 wid)
+				       ;;   (for (y 1 hgt)
+				       (let ((ch (g 'get x y)))
+					 (when (and (integer? ch) (= ch n))
+					   (go (- x 1) y (+ n 1))
+					   (go (+ x 1) y (+ n 1))
+					   (go  x (- y 1) (+ n 1))
+					   (go  x (+ y 1) (+ n 1))))))
+			
 			;; use a flag to tell us if we set anything otherwise loop forever
 			(when did-set 
 			  (set! did-set #f)
@@ -577,10 +588,64 @@
       ;; loop again looking for squares labelled 1 and all four directions , label then 2
       ;; so on
       (forward 0)
+      
       (bind (xe ye) end
 	    (let ((exit (g 'get xe ye)))
 	      ;;(fmt #t "exit at ~a ~%" exit)
 	      exit)))))
+
+
+
+;; ;; destroys the original ``grid``` with numerical values
+;; (define (wander! g)
+;;   (let* ((start (g 'start))
+;; 	 (end (g 'end))
+;; 	 (wid (g 'wid))
+;; 	 (hgt (g 'hgt))
+;; 	 (did-set #f))
+
+;;     ;; try put an integer at x y where there is an empty #\. char 
+;;     (letrec ((go (lambda (x y n) 
+;; 		   (cond
+;; 		    ((<= x 1) #f)
+;; 		    ((<= y 1) #f)       
+;; 		    ((>= x wid) #f)
+;; 		    ((>= y hgt) #f)
+;; 		    (#t (let ((ch (g 'get x y)))
+;; 			  (cond
+;; 			   ((and (char? ch) (char=? ch #\.)) ;; empty square - place integer there
+;; 			    (set! did-set #t)
+;; 			    (g 'set! x y n))
+;; 			   ((and (integer? ch) (< n ch)) ;; an integer here
+;; 			    ;; unlikely this ever gets executed because all values updated in one fell swoop
+;; 			    (fmt #t "found better value for square ~a ~a" x y)
+;; 			    (set! did-set #t)
+;; 			    (g 'set! x y n))))))))
+;; 	     ;; otherwise i dont care #\# wall or border of grid
+;; 	     (forward (lambda (n)
+;; 			(for (x 1 wid)
+;; 			  (for (y 1 hgt)
+;; 			    (let ((ch (g 'get x y)))
+;; 			      (when (and (integer? ch) (= ch n))
+;; 				(go (- x 1) y (+ n 1))
+;; 				(go (+ x 1) y (+ n 1))
+;; 				(go  x (- y 1) (+ n 1))
+;; 				(go  x (+ y 1) (+ n 1))))))
+;; 			;; use a flag to tell us if we set anything otherwise loop forever
+;; 			(when did-set 
+;; 			  (set! did-set #f)
+;; 			  (forward (+ n 1))))))
+;;       ;; give start value of 0
+;;       (bind (x y) start (g 'set! x y 0))
+;;       ;; look for squares that are empty in all four directions , if so label then 1
+;;       ;; loop again looking for squares labelled 1 and all four directions , label then 2
+;;       ;; so on
+;;       (forward 0)
+;;       (bind (xe ye) end
+;; 	    (let ((exit (g 'get xe ye)))
+;; 	      ;;(fmt #t "exit at ~a ~%" exit)
+;; 	      exit)))))
+
 
 
 
@@ -655,13 +720,22 @@
 	(end (g 'end))
 	(wid (g 'wid))
 	(hgt (g 'hgt))
-	(nominal (wander! (copy-grid gold)))
+	(nominal (begin
+		   (format #t "wandering original grid for nominal value : ")
+		   (let ((sol (wander! (copy-grid gold))))
+		     (format #t "~a discovered~%" gold)
+		   sol)))
 	;;(hash (make-hash-table))
-	(hash2 (make-hash-table))	
+	(hash2 (make-hash-table))
+	(coords-len (length coords))
+	(coords-i 0)
 	(tot 0))
+    (format #t "starting processing ...~%")
     ;; (for (cx 2 (- wid 1))
     ;;   (for (cy 2 (- hgt 1))
     (do-list (pos coords)
+	     (incf! coords-i)
+	     (format #t "~a / ~a : processing square ~a ~%~!" coords-i coords-len pos)
 	     (bind (cx cy) pos
 		   (let ((g (copy-grid gold)))
 		     ;; copy grid ?
@@ -705,12 +779,17 @@
 
 
 
+
+
 	  
 
 (define (part-1)
+  (format #t "populating the grid list ~%")
   (let ((g (populate grid-list)))
     ;; read a list of coordinates to cheat on
     ;; coords - read from command line filename 
+    (format #t "proceeding to cheat given coords ~%")
+    ;;(flush-output-port #t)
     (cheat g coords)))
 
 
@@ -732,7 +811,7 @@
 	 (wid (g 'wid))
 	 (hgt (g 'hgt))
 	 (n-states 0)
-	 (nprocs 16)
+	 (nprocs 16) ;; tried 16 all processes got killed ? %%%%%%%%% SET PROCESSOR COUNT  HERE 
 	 (tasks (make-vector (+ nprocs 2) '()))
 	 (task-i 1))
 
@@ -856,5 +935,295 @@
 ;; evenly distributed amongst task
 
 
+#|
 
+==> tasker1.out <==
+ in total there are 124 solutions
+
+==> tasker2.out <==
+ in total there are 230 solutions
+
+==> tasker3.out <==
+ in total there are 93 solutions
+
+==> tasker4.out <==
+ in total there are 234 solutions
+
+==> tasker5.out <==
+ in total there are 100 solutions
+
+==> tasker6.out <==
+ in total there are 245 solutions
+
+==> tasker7.out <==
+ in total there are 84 solutions
+
+==> tasker8.out <==
+ in total there are 248 solutions
+
+(+ 248 84 245 100 234 93 230 124)   1358 ???
+
+real	1m23.499s
+user	8m46.490s
+sys	0m2.827s
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+time ./run4.sh
+
+==> tasker1.out <==
+ in total there are 224 solutions 
+
+==> tasker2.out <==
+ in total there are 475 solutions 
+
+==> tasker3.out <==
+ in total there are 177 solutions 
+
+==> tasker4.out <==
+ in total there are 482 solutions 
+
+rebuilding multi program in case source file changes
+launching 4 tasks to solve puzzle 
+
+real	1m53.340s
+user	7m21.708s
+sys	0m2.535s
+
+(+ 482 177 475 224)  1358
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+==> tasker10.out <==
+there are 3 solutions saving 240 picoseconds
+
+ in total there are 174 solutions 
+
+==> tasker11.out <==
+there are 1 solutions saving 2082 picoseconds
+
+ in total there are 55 solutions 
+
+==> tasker12.out <==
+there are 1 solutions saving 240 picoseconds
+
+ in total there are 152 solutions 
+
+==> tasker13.out <==
+
+==> tasker14.out <==
+
+==> tasker15.out <==
+
+==> tasker16.out <==
+
+==> tasker1.out <==
+there are 1 solutions saving 242 picoseconds
+
+ in total there are 67 solutions 
+
+==> tasker2.out <==
+there are 1 solutions saving 7244 picoseconds
+
+ in total there are 147 solutions 
+
+==> tasker3.out <==
+there are 1 solutions saving 7242 picoseconds
+
+ in total there are 64 solutions 
+
+==> tasker4.out <==
+there are 2 solutions saving 240 picoseconds
+
+ in total there are 158 solutions 
+
+==> tasker5.out <==
+there are 1 solutions saving 1570 picoseconds
+
+ in total there are 81 solutions 
+
+==> tasker6.out <==
+there are 2 solutions saving 240 picoseconds
+
+ in total there are 154 solutions 
+
+==> tasker7.out <==
+there are 1 solutions saving 242 picoseconds
+
+ in total there are 58 solutions 
+
+==> tasker8.out <==
+there are 2 solutions saving 240 picoseconds
+
+ in total there are 172 solutions 
+
+==> tasker9.out <==
+there are 1 solutions saving 242 picoseconds
+
+ in total there are 76 solutions 
+
+(+ 76 172 58 154 81 158 64 147 67 152 55 174)  1358
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+terry@debian:~/code/advent-of-code/advent-of-code-2024/day20/chicken$ time ./run16.sh
+rebuilding multi program in case source file changes
+launching 16 tasks to solve puzzle 
+
+real	1m11.838s
+user	15m47.821s
+sys	0m5.315s
+
+==> tasker10.out <==
+ in total there are 110 solutions
+
+==> tasker11.out <==
+ in total there are 42 solutions
+
+==> tasker12.out <==
+ in total there are 121 solutions
+
+==> tasker13.out <==
+ in total there are 55 solutions
+
+==> tasker14.out <==
+ in total there are 119 solutions
+
+==> tasker15.out <==
+ in total there are 45 solutions
+
+==> tasker16.out <==
+ in total there are 132 solutions
+
+==> tasker1.out <==
+ in total there are 63 solutions
+
+==> tasker2.out <==
+ in total there are 120 solutions
+
+==> tasker3.out <==
+ in total there are 51 solutions
+
+==> tasker4.out <==
+ in total there are 113 solutions
+
+==> tasker5.out <==
+ in total there are 45 solutions
+
+==> tasker6.out <==
+ in total there are 126 solutions
+
+==> tasker7.out <==
+ in total there are 39 solutions
+
+==> tasker8.out <==
+ in total there are 116 solutions
+
+==> tasker9.out <==
+ in total there are 61 solutions
+(+ 110 42 121 55 119 45 132 63 120 51 113 45 126 39 116) 1297
+
+possibly there were more entries on screen and my copy paste failed me 
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+==> tasker10.out <==
+there are 1 solutions saving 492 picoseconds
+
+ in total there are 110 solutions 
+
+==> tasker11.out <==
+there are 1 solutions saving 162 picoseconds
+
+ in total there are 42 solutions 
+
+==> tasker12.out <==
+there are 1 solutions saving 492 picoseconds
+
+ in total there are 121 solutions 
+
+==> tasker13.out <==
+there are 1 solutions saving 178 picoseconds
+
+ in total there are 55 solutions 
+
+==> tasker14.out <==
+there are 1 solutions saving 596 picoseconds
+
+ in total there are 119 solutions 
+
+==> tasker15.out <==
+there are 2 solutions saving 178 picoseconds
+
+ in total there are 45 solutions 
+
+==> tasker16.out <==
+there are 2 solutions saving 176 picoseconds
+
+ in total there are 132 solutions 
+
+==> tasker1.out <==
+there are 1 solutions saving 178 picoseconds
+
+ in total there are 63 solutions 
+
+==> tasker2.out <==
+there are 1 solutions saving 176 picoseconds
+
+ in total there are 120 solutions 
+
+==> tasker3.out <==
+there are 1 solutions saving 182 picoseconds
+
+ in total there are 51 solutions 
+
+==> tasker4.out <==
+there are 1 solutions saving 596 picoseconds
+
+ in total there are 113 solutions 
+
+==> tasker5.out <==
+there are 1 solutions saving 178 picoseconds
+
+ in total there are 45 solutions 
+
+==> tasker6.out <==
+there are 2 solutions saving 480 picoseconds
+
+ in total there are 126 solutions 
+
+==> tasker7.out <==
+there are 1 solutions saving 482 picoseconds
+
+ in total there are 39 solutions 
+
+==> tasker8.out <==
+there are 1 solutions saving 176 picoseconds
+
+ in total there are 116 solutions 
+
+==> tasker9.out <==
+there are 1 solutions saving 182 picoseconds
+
+ in total there are 61 solutions 
+
+(+ 61 116  39 126 45 113 51 120 63 132 45 119 55 121 42 110)  1358
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+suggested solution is 1358
+
+***********************************
+
+
+
+|#
     

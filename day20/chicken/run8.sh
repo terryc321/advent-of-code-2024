@@ -6,7 +6,7 @@ rm -f multi
 csc -o multi multi.scm
 
 
-echo "launching 16 tasks to solve puzzle "
+echo "launching 8 tasks to solve puzzle "
 pids=()
 ./multi -g tasker1.dat -f ../input.txt > tasker1.out &
 pids[1]=$!
