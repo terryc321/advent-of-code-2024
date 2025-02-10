@@ -139,7 +139,11 @@
 ;;; and optional args must not be separated from their option by a space
 ;;; (e.g. -d2 or --debug=2, not -d 2 or --debug 2).
 
-#|
+
+;; comment this line out when uncomment front end code below
+;;(define input-filename "../example.txt")
+(define input-filename "../input.txt")
+
 
 (define opts
  (list (args:make-option (c cookie)    #:none     "give me cookie"
@@ -172,7 +176,7 @@
 (define input-filename #f)
 (define coords-filename #f)
 
-;;(define input-filename "../example.txt")
+
 
 (receive (options operands)
     (args:parse (command-line-arguments) opts)
@@ -186,14 +190,32 @@
 
 (format #t "input-filename : ~a~%" input-filename)
 (format #t "coords-filename : ~a~%" coords-filename)
-(format #t "we got here.~%")
-(exit 0)
 
-|#
+(when (not coords-filename)
+  (format #t "ERROR bad coords filename ~%")
+  (exit 2))
+;; (format #t "we got here.~%")
+;; (exit 0)
+
+
+
 
 
 
 ;; %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+;; (define coords-filename "tasker1.dat")
+
+(define coords (with-input-from-file coords-filename
+		 (lambda ()
+		   (read))))
+
+
+;; ensure coords is a list of pairs of integers
+(cond
+ ((and (list? coords) (> (length coords) 1206)) #t)
+ (#t (format #t "ERROR Bad coords file ~a ~%" coords-filename)
+     (exit 1)))
 
 
 
@@ -648,7 +670,8 @@
 			    (save (- nominal exit))
 			    (pos (list cx cy)))
 		       ;; only save if we actually saved some time
-		       (when (> save 0)
+		       ;; when we save atleast 100 picoseconds of time 
+		       (when (>= save 100)
 			 
 			 ;; store location cx cy under savings key
 			 (let ((hv (href/d hash2 save #f)))
@@ -675,7 +698,9 @@
 	       ;;(format #t "there are ~a : ~a solutions saving ~a picoseconds~%" len len2 save)
 	       (format #t "there are ~a solutions saving ~a picoseconds~%" len2 save)
 	       ))
+    (format #t "~% in total there are ~a solutions ~%" tot)
     tot))
+
 
 
 	  
@@ -683,26 +708,145 @@
 (define (part-1)
   (let ((g (populate grid-list)))
     ;; read a list of coordinates to cheat on
-    ;; ??
+    ;; coords - read from command line filename 
     (cheat g coords)))
 
 
+;; %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+;;     assigned the work for 16 processes
+;;  runnign from tasker1.dat .... tasker16.dat 
+;; %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 ;; 141 x 141 square split work up into 16 equal regions
-
-
 (define (assign-work)
   (let* ((start (g 'start))
 	 (end (g 'end))
 	 (wid (g 'wid))
 	 (hgt (g 'hgt))
-	 (g2 (make-grid wid hgt #\.)))
+	 (n-states 0)
+	 (nprocs 16)
+	 (tasks (make-vector (+ nprocs 2) '()))
+	 (task-i 1))
+
     (for (x 2 (- wid 1))
       (for (y 2 (- hgt 1))
-	(let ((ch (g 'get x y)))
-	  (g2 'set! x y ch))))
-    (g2 'set-start! (g 'start))
-    (g2 'set-end! (g 'end))
-    g2))
+	(incf! n-states)))
+
+    (format #t "there are ~a states to explore~%" n-states)
+
+    ;; task-i index into task vector 1 to nprocs inclusive 
+    ;;(set! task-i 1)
+    ;; one way would be have an index moving through a vector of 16 tasks
+    ;; adding that state to task
+    (for (x 2 (- wid 1))
+      (for (y 2 (- hgt 1))
+	(let ((pos (list x y)))	   	  
+	  (let ((task-list (vector-ref tasks task-i)))	    
+	    ;; for this tasker
+	    ;;(when (= task-i tasker)
+	      (vector-set! tasks task-i (cons pos task-list))
+	      (format #t "assigning ~a to tasker ~a~%" pos task-i)
+	    
+	    ;; rolls round to next tasker
+	    (incf! task-i)		
+	    (when (> task-i nprocs)
+	      (set! task-i 1))))))
+    
+    ;; (for (tasker 1 nprocs 1)
+    ;;   (let ((outfile (format #f "tasker~a.dat" tasker)))
+    ;; 	(with-output-to-file outfile
+    ;; 	  (lambda ()
+    ;; 	    (format #t " tasker ~a ~%" tasker)
 
 
+    (let ((tot 0))
+      (for (tasker-i 1 nprocs)
+	(let ((task-list (vector-ref tasks tasker-i)))
+	  (format #t "tasker ~a has ~a tasks ~%" tasker-i (length task-list))
+	  (let ((outfile (format #f "tasker~a.dat" tasker-i)))
+	    (with-output-to-file outfile
+	      (lambda ()
+		(pp task-list))))
+	  (set! tot (+ tot (length task-list)))))
+      tot)))
+
+
+
+
+
+
+
+
+
+
+
+;; %%%%%%%%%%%%%%%%%%% buggy code %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+;;
+;; expected
+;;
+;; %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+;; ;; 141 x 141 square split work up into 16 equal regions
+;; (define (assign-work)
+;;   (let* ((start (g 'start))
+;; 	 (end (g 'end))
+;; 	 (wid (g 'wid))
+;; 	 (hgt (g 'hgt))
+;; 	 (n-states 0)
+;; 	 (nprocs 16)
+;; 	 (tasks (make-vector (+ nprocs 2) '()))
+;; 	 (task-i 1))
+
+;;     (for (x 2 (- wid 1))
+;;       (for (y 2 (- hgt 1))
+;; 	(incf! n-states)))
+
+;;     (format #t "there are ~a states to explore~%" n-states)
+
+;;     (for (tasker 1 nprocs 1)
+;;       (format #t " tasker ~a ~%" tasker)
+;;       ;; task-i index into task vector 1 to nprocs inclusive 
+;;       (set! task-i 1)
+;;       ;; one way would be have an index moving through a vector of 16 tasks
+;;       ;; adding that state to task
+;;       (for (x 2 (- wid 1))
+;; 	(for (y 2 (- hgt 1))
+;; 	  (let ((pos (list x y)))
+;; 	    (when (= task-i tasker)
+	      
+;; 	      (let ((task-list (vector-ref tasks task-i)))
+;; 		(vector-set! tasks task-i (cons pos task-list))
+;; 		(format #t "assigning ~a to tasker ~a" pos task-i)
+		
+;; 		;; rolls round to next tasker
+;; 		(incf! task-i)		
+;; 		(when (> task-i nprocs)
+;; 		  (set! task-i 1))))))))
+
+    
+;;     (let ((tot 0))
+;;       (for (i 1 nprocs)
+;; 	(let ((task-list (vector-ref tasks i)))
+;; 	  (format #t "tasker ~a has ~a tasks ~%" i (length task-list))
+;; 	  (set! tot (+ tot (length task-list)))))
+;;       tot)))
+
+
+
+
+
+
+
+;; 169 states - suppose we split this off into 16 tasks
+;; how many states is that per task ?
+;; (modulo 169 16) = 9
+;; (floor (/ 169 16)) = 10
+;;    each of the 16 tasks has 10 states = 160 states covered
+;;        9 states left over
+;; breakdown overall :
+;;        9 tasks will get 11 states to cover
+;;        7 tasks will get 10 states to cover
+;; evenly distributed amongst task
+
+
+
+    
