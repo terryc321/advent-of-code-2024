@@ -142,7 +142,10 @@
 
 ;; comment this line out when uncomment front end code below
 ;;(define input-filename "../example.txt")
-(define input-filename "../input.txt")
+;; (define input-filename "../input.txt")
+
+(define input-filename #f)
+(define coords-filename #f)
 
 
 (define opts
@@ -172,12 +175,6 @@
      (print "Report bugs to zbigniewsz at gmail.")))
  (exit 1))
 
-
-(define input-filename #f)
-(define coords-filename #f)
-
-
-
 (receive (options operands)
     (args:parse (command-line-arguments) opts)
   ;; 'e or 'elephant both work
@@ -194,6 +191,11 @@
 (when (not coords-filename)
   (format #t "ERROR bad coords filename ~%")
   (exit 2))
+
+(when (not input-filename)
+  (format #t "ERROR bad input filename ~%")
+  (exit 3))
+
 ;; (format #t "we got here.~%")
 ;; (exit 0)
 
@@ -710,6 +712,12 @@
     ;; read a list of coordinates to cheat on
     ;; coords - read from command line filename 
     (cheat g coords)))
+
+
+;; %%%%%%%%%%%%%%% WORK HORSE %%%%%%%%%%%%%
+(part-1)
+;;%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 
 
 ;; %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
