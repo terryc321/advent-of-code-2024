@@ -26,6 +26,13 @@
   `(set! ,y (+ ,y 1)))
 
 
+(define href/d hash-table-ref/default)
+(define href hash-table-ref)
+(define hset! hash-table-set!)
+(define hkeys hash-table-keys)
+
+
+
 
 ;; (for (i from to by) ...)
 ;;
@@ -120,8 +127,8 @@
 
 
 
-;;(define input-filename "../input.txt")
-(define input-filename "../example.txt")
+(define input-filename "../input.txt")
+;;(define input-filename "../example.txt")
 
 
 
@@ -245,18 +252,21 @@
 	   ((eq? op 'get) (get args))
 	   ((eq? op 'set!) (set args))
 	   
+	   ((eq? op 'start) start)
 	   ((eq? op 'set-start!) (set-start! args))
+
+	   ((eq? op 'end) end)
 	   ((eq? op 'set-end!) (set-end! args))
 
 	   ((eq? op 'set-cheat!) (set-cheat! args))
 	   ((eq? op 'cheat) cheat)	   
-	   ((eq? op 'start) start)
-	   ((eq? op 'end) end)
-
+	   
 	   ((eq? op 'show) (show))
-	   ((eq? op 'forall) (forall args))       
-	   (#t (error "unknown message to make-grid")))))
+	   ;; ((eq? op 'forall) (forall args))       
+	   (#t (error (format #f "unknown message [~a] to make-grid" op))))))
       this)))
+
+
 
 (define-macro (Grid.attr! g a v ) `(,g ,a ,v))
 (define-macro (Grid.wid g) `(,g 'wid))
@@ -363,41 +373,262 @@
     grid))
 
 
-;; generic way to handle setting and getting 
-;; populate grid from a list rep with strings
-(define (populate2 xs)
-  (let* ((wid (string-length (car xs)))
-	 (hgt (length xs))
-	 (x 1)
-	 (y 1)
-	 (g (make-grid wid hgt #\.)))
-    (do-list (row grid-list)
-	     (let ((slen (string-length row)))
-	       (for (i 0 (- slen 1))
-		 (let ((ch (string-ref row i)))
+;; playign around with different ways of set grid x y to certain square 
+
+;; ;; generic way to handle setting and getting 
+;; ;; populate grid from a list rep with strings
+;; (define (populate2 xs)
+;;   (let* ((wid (string-length (car xs)))
+;; 	 (hgt (length xs))
+;; 	 (x 1)
+;; 	 (y 1)
+;; 	 (g (make-grid wid hgt #\.)))
+;;     (do-list (row grid-list)
+;; 	     (let ((slen (string-length row)))
+;; 	       (for (i 0 (- slen 1))
+;; 		 (let ((ch (string-ref row i)))
+;; 		   (cond
+;; 		    ((char=? ch #\S)
+;; 		     (Grid.set! g x y #\.)
+;; 		     ;;(Grid.attr! g 'start (list x y)))
+;; 		    ((char=? ch #\E)
+;; 		     (Grid.set! g x y #\.)
+;; 		     ;;(Grid.attr! 'end (list x y)))		    
+;; 		    (#t 
+;; 		     (grid 'set! x y ch)))
+;; 		   (incf! x)))
+;; 	       (incf! y)
+;; 	       (set! x 1)))
+;; 	       grid))))
+
+
+;; ---------- rewrite ------------------
+;; (define (forward n)
+;;   (let loop ((x 1)(y 1))
+;; 	(cond
+;; 	 ((> x width)	  
+;; 	  (loop 1 (+ y 1)))
+;; 	 ((> y height) #f)
+;; 	 (#t
+;; 	  (let ((ch (g 'get x y)))
+;; 	    (when (and (integer? ch) (= ch n))
+;; 	      (go (- x 1) y (+ n 1))
+;; 	      (go (+ x 1) y (+ n 1))
+;; 	      (go  x (- y 1) (+ n 1))
+;; 	      (go  x (+ y 1) (+ n 1)))	    
+;; 	    (loop (+ x 1) y))))
+;; 	(when did-set ;; use a flag to tell us if we set anything otherwise loop forever
+;; 	  (set! did-set #f)
+;; 	  (forward (+ n 1)))))
+
+
+(define (copy-grid g)
+  (let* ((start (g 'start))
+	 (end (g 'end))
+	 (wid (g 'wid))
+	 (hgt (g 'hgt))
+	 (g2 (make-grid wid hgt #\.)))
+    (for (x 1 wid)
+      (for (y 1 hgt)
+	(let ((ch (g 'get x y)))
+	  (g2 'set! x y ch))))
+    (g2 'set-start! (g 'start))
+    (g2 'set-end! (g 'end))
+    g2))
+
+
+
+	  
+  
+
+
+;; destroys the original ``grid``` with numerical values
+(define (wander! g)
+  (let* ((start (g 'start))
+	 (end (g 'end))
+	 (wid (g 'wid))
+	 (hgt (g 'hgt))
+	 (did-set #f))
+
+    ;; try put an integer at x y where there is an empty #\. char 
+    (letrec ((go (lambda (x y n) 
 		   (cond
-		    ((char=? ch #\S)
-		     (Grid.set! g x y #\.)
-		     ;;(Grid.attr! g 'start (list x y)))
-		    ((char=? ch #\E)
-		     (Grid.set! g x y #\.)
-		     ;;(Grid.attr! 'end (list x y)))		    
-		    (#t 
-		     (grid 'set! x y ch)))
-		   (incf! x)))
-	       (incf! y)
-	       (set! x 1)))
-    grid))
+		    ((<= x 1) #f)
+		    ((<= y 1) #f)       
+		    ((>= x wid) #f)
+		    ((>= y hgt) #f)
+		    (#t (let ((ch (g 'get x y)))
+			  (cond
+			   ((and (char? ch) (char=? ch #\.)) ;; empty square - place integer there
+			    (set! did-set #t)
+			    (g 'set! x y n))
+			   ((and (integer? ch) (< n ch)) ;; an integer here
+			    ;; unlikely this ever gets executed because all values updated in one fell swoop
+			    (fmt #t "found better value for square ~a ~a" x y)
+			    (set! did-set #t)
+			    (g 'set! x y n))))))))
+	     ;; otherwise i dont care #\# wall or border of grid
+	     (forward (lambda (n)
+			(for (x 1 wid)
+			  (for (y 1 hgt)
+			    (let ((ch (g 'get x y)))
+			      (when (and (integer? ch) (= ch n))
+				(go (- x 1) y (+ n 1))
+				(go (+ x 1) y (+ n 1))
+				(go  x (- y 1) (+ n 1))
+				(go  x (+ y 1) (+ n 1))))))
+			;; use a flag to tell us if we set anything otherwise loop forever
+			(when did-set 
+			  (set! did-set #f)
+			  (forward (+ n 1))))))
+      ;; give start value of 0
+      (bind (x y) start (g 'set! x y 0))
+      ;; look for squares that are empty in all four directions , if so label then 1
+      ;; loop again looking for squares labelled 1 and all four directions , label then 2
+      ;; so on
+      (forward 0)
+      (bind (xe ye) end
+	    (let ((exit (g 'get xe ye)))
+	      ;;(fmt #t "exit at ~a ~%" exit)
+	      exit)))))
 
 
 
 
 (define g (populate grid-list))
+(define g2 (copy-grid g))
+
 (g 'show)
 
+(g 'get 2 4)
+(g 'start)
+(g 'end)
+(wander! g)
+(g 'show)
+
+(g2 'show)
+
+
+(define (cheat gold)
+  (let ((start (g 'start))
+	(end (g 'end))
+	(wid (g 'wid))
+	(hgt (g 'hgt))
+	(nominal (wander! (copy-grid gold)))
+	(hash (make-hash-table)))
+    (for (cx 2 (- wid 1))
+      (for (cy 2 (- hgt 1))
+	(let ((g (copy-grid gold)))
+	  ;; copy grid ?
+	  ;; place cheat at cx cy - an empty square
+	  (g 'set! cx cy #\.)
+	  ;; wander
+	  (let* ((exit (wander! g))
+		 (save (- nominal exit))
+		 (pos (list cx cy)))
+	    ;; only save if we actually saved some time
+	    (when (> save 0)
+	    ;; store location cx cy under savings key
+	    (let ((hv (href/d hash save #f)))
+	      (cond
+	       ((eq? hv #f) (hset! hash save (list pos)))
+	       ((member pos hv) #f)
+	       (#t (hset! hash save (cons pos hv))))))))))
+    
+    ;; for each - list them out in some order?
+    (do-list (save (hkeys hash))
+	     (let ((coords (href hash save)))
+	       (format #t "there are ~a solutions saving ~a picoseconds~%" (length coords) save)))))
+
+
+	  
+
+(define (part-1)
+  (let ((g (populate grid-list)))
+    (cheat g)))
+
+
+;; run this 
+(part-1)
 
 
 
+;; ;; %%%%%%%%%%% the cheat %%%%%%%%%%%%%%%%%%%%
+;; ;; given grid g3 -> make g g2 copies , can mutate g g2 without worry g3 corrupt
+;; (define (cheat g3)
+;;   (let ((g (copy-grid g3))
+;; 	(start (g 'start))
+;; 	(end (g 'end))
+;; 	(width (g 'wid))
+;; 	(height (g 'hgt))
+;; 	(cheat-hash (make-hash-table))
+;; 	(nominal (let ((g2 (copy-grid g3))) ;; get a nominal value to compare cheats with
+;; 		   (let ((exit (wander! g2)))
+;; 		     (show-grid g2)
+;; 		     exit))))
+
+;;     ;; try put an integer at x y where there is an empty #\. char
+    
+;;     ;; is the cheat square on the board , no point putting a cheat square on border
+;;     ;; because it does not go anywhere 
+;;     (define (go2 x y) 
+;;       (cond
+;;        ((<= x 1) #f)
+;;        ((<= y 1) #f)       
+;;        ((>= x width) #f)
+;;        ((>= y height) #f)
+;;        (#t (let ((copy (copy-hash h)))
+;; 	     (g 'set! x y #\.)
+;; 	     (hset! copy 'cheat-1 (list x y))
+;; 	     (let* ((exit (wander! copy))
+;; 		    (savings (- nominal exit)))
+;; 	       (when (> savings 0) 
+;; 		 (fmt #t "placing cheat at (~a ~a) saved ~a picoseconds~%" x y savings)
+;; 		 (let ((val (href/d cheat-hash savings #f)))
+;; 		   (cond
+;; 		    ((and (list? val) (member (list x y) val)) #f)
+;; 		    ((list? val) (hset! cheat-hash savings (cons (list x y) val)))
+;; 		    ((eq? val #f) (hset! cheat-hash savings (list (list x y))))))
+;; 		 ;;(show-hash copy)
+;; 		 ;;(fmt #t "~%~%")
+;; 		 ))))))
+    
+       
+;;     ;; for cx from 2 to (- wid 1)
+;;     ;; for cy from 2 to (- hgt 1)
+;;     ;;   place cheat at cx cy
+;;     ;;   wander 
+;;     ;; loop 
+;;     (let loop ((x 1)(y 1))
+;; 	(cond
+;; 	 ((> x width)	  
+;; 	  (loop 1 (+ y 1)))
+;; 	 ((> y height) #f)
+;; 	 (#t
+
+;; 	  ;; (go x y (- x 1) y)
+;; 	  ;; (go x y (+ x 1) y)
+;; 	  ;; (go x y x (- y 1))
+;; 	  ;; (go x y x (+ y 1))
+
+;; 	  (go2 (- x 1) y)
+;; 	  (go2 (+ x 1) y)
+;; 	  (go2 x (- y 1))
+;; 	  (go2 x (+ y 1))
+;; 	  (loop (+ x 1) y))))
+    
+;;     ;; go through the cheat hash what do i find
+;;     (let ((keys (hash-table-keys cheat-hash))
+;; 	  (tot 0))
+;;       (do-list (pico keys)
+;; 	       (let* ((val (href cheat-hash pico))
+;; 		      (ncheats (length val)))
+;; 		 (fmt #t "There are ~a cheats that save ~a picoseconds~%" ncheats pico)
+;; 		 ;; how many cheats save 100 pico seconds
+;; 		 (when (>= pico 100)
+;; 		   (set! tot (+ tot ncheats)))))
+      
+;;       (fmt #t "There are ~a cheats that save 100 picoseconds~%" tot))))
 
 
 
