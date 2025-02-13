@@ -1,4 +1,5 @@
 
+(import (chicken pretty-print)) ;; pp
 
 ;; expanding macros 
 (import expand-full) ;; expand* macro expansion

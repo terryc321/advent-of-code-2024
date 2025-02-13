@@ -2,10 +2,16 @@
 ;; requires FOR macro 
 ;; ,l for.scm
 
+;;(load "for.scm")
+;;(load "dolist")
+
+
+#|
+
+some sample code on how to 
 
 (define input-filename "../input.txt")
 ;;(define input-filename "../example.txt")
-
 
 
 ;; open the file input.txt
@@ -47,14 +53,17 @@
 ;; ;; for each element of grid
 
 ;; (define grid (make-vector (* (+ width 2) (+ height 2))))
+|#
 
-
+;; (module grid (make-grid)
+;;   (import scheme)
+;;   (import )
 
 (define (make-grid x y e)
   (let ((wid x)
 	(hgt y)
 	(rows (make-vector (+ y 3)))
-	(cheat #f)
+	(cheat #f) ;; ?? 
 	(start #f)
 	(end #f)
 	(this #f))
@@ -80,6 +89,13 @@
 			   ((< y 1) (error "set! y < 1 "))
 			   ((> y hgt) (error "set! y > height"))
 			   (#t (unsafe-set x y v))))))
+	     (copy (lambda ()
+		     (let ((copy (make-grid x y e)))
+		       (for (y 1 hgt)
+			    (for (x 1 wid)
+				 (let ((e (unsafe-get x y)))
+				   (copy 'set! x y e))))
+		       copy)))
 	     (show (lambda () ;; square and we control the x y , opted for no checks
 		     (fmt #t "~%")
 		     (fmt #t "start at ~a : end at ~a ~%" start end)
@@ -121,7 +137,7 @@
 	  (cond
 	   ;; ((eq? op 'attr) (attr args)) ;; attributes 
 	   ;; ((eq? op 'attr!) (attr! args))
-	   
+	   ((eq? op 'copy) (copy))
 	   ((eq? op 'wid) wid)
 	   ((eq? op 'hgt) hgt)
 	   ((eq? op 'data) rows)
@@ -144,12 +160,12 @@
 
 
 
-(define-macro (Grid.attr! g a v ) `(,g ,a ,v))
-(define-macro (Grid.wid g) `(,g 'wid))
-(define-macro (Grid.hgt g) `(,g 'hgt))
-(define-macro (Grid.get g x y) `(,g 'get ,x ,y))
-(define-macro (Grid.set g x y v) `(,g 'set! ,x ,y ,v))
-(define-macro (Grid.show g) `(,g 'show))
-;;(define-macro (Grid.forall g) `(,g 'show))
-
+;; (define-macro (Grid.attr! g a v ) `(,g ,a ,v))
+;; (define-macro (Grid.wid g) `(,g 'wid))
+;; (define-macro (Grid.hgt g) `(,g 'hgt))
+;; (define-macro (Grid.get g x y) `(,g 'get ,x ,y))
+;; (define-macro (Grid.set g x y v) `(,g 'set! ,x ,y ,v))
+;; (define-macro (Grid.show g) `(,g 'show))
+;; ;;(define-macro (Grid.forall g) `(,g 'show))
+;;)
 

@@ -1,0 +1,8 @@
+
+#|
+
+module example in hello.scm
+exports greet and hello identifiers
+
+
+|#
