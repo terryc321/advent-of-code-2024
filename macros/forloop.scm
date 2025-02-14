@@ -365,6 +365,12 @@
 ;;(for (i 9 1 -2) (write "i=")(write i) (newline))
 ;;(for (i 9 1 2) (write "i=")(write i) (newline))
 
+;;(for2 (i 1 10) (write "i=")(write i) (newline))
+;;(for2 (i 1 10 2) (write "i=")(write i) (newline))
+;;(for2 (i 10 1) (write "i=")(write i) (newline))
+;;(for2 (i 9 1 -2) (write "i=")(write i) (newline))
+;;(for2 (i 9 1 2) (write "i=")(write i) (newline))
+
 ;; (define-syntax for
 ;;   (er-macro-transformer
 ;;    (lambda (exp rename compare?)
