@@ -1,0 +1,15 @@
+
+install standard ml new jersey
+
+in bin directory have these files
+ml-antlr  ml-build  ml-burg  ml-lex  ml-makedepend  ml-ulex  ml-yacc  nowhere  sml
+
+
+example lex file called myfile.lex 
+> ml-lex myfile.lex
+
+generates myfile.lex.sml
+
+
+
+
