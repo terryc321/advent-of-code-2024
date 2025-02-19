@@ -1,0 +1,84 @@
+
+how to build a lexer in standard ml using smlnj
+
+mlfile.lex has a simple lexer
+error in example 
+{digit}+ => (NUM (revfold (fn(a,r)=>ord(a)-ord("0")+10*r) (explode yytext) 0));
+                                              ^^-- missing # hash symbol
+should read as 					      
+{digit}+ => (NUM (revfold (fn(a,r)=>ord(a)-ord(#"0")+10*r) (explode yytext) 0));
+
+
+getting errors >>
+myfile.lex.sml:9.21-9.27 Error: unbound variable or constructor: output
+myfile.lex.sml:9.28-9.35 Error: unbound variable or constructor: std_out
+myfile.lex.sml:10.20-10.23 Error: unbound variable or constructor: EOF
+myfile.lex.sml:126.42-126.49 Error: unbound variable or constructor: revfold
+val it = () : unit
+
+output maybe is TextIO.output
+std_out maybe is TextIO.stdOut
+
+fun revfold _ nil b = b 
+ | revfold f (hd::tl) b = revfold f tl (f(hd,b));
+
+(*
+https://wiki.c2.com/?SmlLanguage
+
+If the second argument is nil (an empty list), return the third argument. 
+ Otherwise, recurse on the tail of the list and
+ replace b with the result of applying f to the head
+ of the list and the old b.
+*)
+
+myfile.lex.sml:18.20-18.23 Error: unbound variable or constructor: EOF
+need a definiton for EOF procedure
+
+datatype lexresult=  BREAK |  NUM of int | EOF
+                                            ^^--- end of file token
+val eof = fn () => EOF
+
+got our input.txt file simply a line by line sequence of various numbers
+
+1 2 3
+4 5
+6
+7 8 9
+10 11 12 13
+14 15
+...
+
+example of pattern expecting lexer to pick up
+renamed Mlex to CalcLex to match the example
+
+open_in "input.txt"
+open_in maybe TextIO.openIn
+
+inputc
+inputc (open_in "input.txt")
+inputc maybe TextIO.instream -> ?? 
+
+
+https://www.cs.cmu.edu/afs/cs/local/sml/common/smlguide/smlnj.htm
+
+CM compilation manager for smlnj
+simply organises use "files" in a specific order so can be reloaded / or compiled
+
+
+C-cC-l	save the current buffer and then "use" the file
+C-cC-r	send the current region to the sml shell
+C-c`	find the next error message and position the cursor on the corresponding line in the source file
+C-cC-s	split the screen and show the sml shell
+
+
+LL(R) ? top down parser use ml-ulex ml-antlr instead , ml-antlr example may actually do something useful
+
+ml-ulex    
+ml-antlr
+
+we can always work around the limitations of sml system for i/o uising alternative software  even scheme and antlr g4 grammars
+
+
+
+
+
