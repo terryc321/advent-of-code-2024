@@ -225,23 +225,25 @@ really want to be able to remove one index from sequence and have  that new sequ
 pass the tests
 *)
 fun removeItem xs n = if n < 1 then xs
+		      else if xs = [] then xs
 		      else if n = 1 then List.tl xs
 		      else (List.hd xs) :: (removeItem (List.tl xs) (n - 1));
 
 
 (* this is unfixable  *)
-exception Fix of (int list * int * int * int list) option;
+exception Fix of (int list) option;
 
-fun fixable f xs = (fixable2 f xs 0 ((List.length xs) - 1))
+fun fixable f xs = (fixable2 f xs 0 ((List.length xs) + 2))
 and fixable2 f xs n len = if n < len then
 			      let val r = removeItem xs n (* try remove nth item *)
 				  val ok = f r (* possible *)
-			      in if ok then SOME (r,n + 1,List.nth(xs,n),xs)
+			      in if ok then SOME r (* (r,n + 1,List.nth(xs,n),xs) *)
 				 else fixable2 f xs (n + 1) len
 			      end				  
 			  else NONE
 
 fun safe xs = fixable accept xs;
+
 
 val part2 =
     let val s = List.map safe nums
@@ -251,8 +253,17 @@ val part2 =
     in
 	List.filter f s 
     end
-	
 
+
+val sum = List.foldr (fn (x,y) => x + y) 0
+
+val fidelity = sum (List.map (fn x => sum x) nums)
+		   
+
+	    
+		
+
+		   
 
 				     
       (*
