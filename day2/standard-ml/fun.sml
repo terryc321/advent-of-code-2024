@@ -10,7 +10,6 @@ and lines2 ins =
     end
 and chomp s =
     implode(List.rev(List.tl(List.rev(explode s))))
-
   
 
 exception MyLines	   
@@ -25,6 +24,7 @@ val nums = List.map (fn x => List.map fs x) lstrs
 
 (* values all increasing or all decreasing *)
 exception IncResult of bool;
+
 
 (*			   
 val inc xs = (case xs of
@@ -89,7 +89,7 @@ fun inc ho = case ho of
 	       | (h :: t) => inc2 h t
 and inc2 ho to = case to of
 		     [] => true
-		   | (ho2 :: to2) => if ho <= ho2 then
+		   | (ho2 :: to2) => if ho < ho2 then
 					 inc2 ho2 to2
 				     else false ;
 
@@ -99,7 +99,7 @@ fun dec ho = case ho of
 	       | (h :: t) => dec2 h t
 and dec2 ho to = case to of
 		     [] => true
-		   | (ho2 :: to2) => if ho >= ho2 then
+		   | (ho2 :: to2) => if ho > ho2 then
 					 dec2 ho2 to2
 				     else false ;
 
@@ -230,24 +230,38 @@ fun removeItem xs n = if n < 1 then xs
 
 
 (* this is unfixable  *)
-exception Fix of bool;
+exception Fix of (int list * int * int * int list) option;
 
 fun fixable f xs = (fixable2 f xs 0 ((List.length xs) - 1))
-		       handle Fix b => b 
 and fixable2 f xs n len = if n < len then
 			      let val r = removeItem xs n (* try remove nth item *)
-				  val p = f r (* possible *)
-				  val a = inc p
-				  val b = dec p
-				  val c = diff p
-				  val ok = (a orelse b) andalso c
-			      in if ok then raise Fix true
+				  val ok = f r (* possible *)
+			      in if ok then SOME (r,n + 1,List.nth(xs,n),xs)
 				 else fixable2 f xs (n + 1) len
 			      end				  
-			  else raise Fix false
+			  else NONE
+
+fun safe xs = fixable accept xs;
+
+val part2 =
+    let val s = List.map safe nums
+	val f = fn x => case x of
+			    NONE => false
+			  | _ => true
+    in
+	List.filter f s 
+    end
+	
+
+
 				     
-val part2a = List.filter accept2 nums;
-val part2 = List.length part2a;
+      (*
+val part2a = List.map (fn x => fixable accept x) nums
+val part2 = List.length (List.filter (fn x => x) part2a)		      
+      *)
+
+(* val part2a = List.filter accept2 nums; *)
+(* val part2 = List.length part2a; *)
 
 (* still get 570 whats going on ?  *)
 
