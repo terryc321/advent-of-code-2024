@@ -1,4 +1,7 @@
 
+;; bit of a let down , cannot use it properly in modules
+
+
 (module for-pro (for)
 
 (import scheme) 
