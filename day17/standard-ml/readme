@@ -1,0 +1,166 @@
+
+From perspective of correctness
+      Think about largest fixed sized integer number
+      Int.maxInt;
+val it = SOME 4611686018427387903 : int option
+
+  now compute 
+  4611686018427387903 * 3 
+
+  what is the result ? smlnj says
+  uncaught exception Overflow [overflow]
+  raised at: <file stdIn>
+
+  what is this to do with logical solution ?
+  how low level do we really need to be ?
+
+
+=========================================================================
+
+say got really really complicated program
+ first question
+  How do you debug it
+  OR How do you show what is happening is what problem spec 
+
+=========================================================================
+
+
+dont know if going insane but
+
+have some top level variables
+ ip regA regB regC
+
+at some point i assign to ip
+ ip := !ip + 2 ;
+
+when loop round again , ip has value 0 ??
+does read set ip to zero ??
+
+
+
+
+
+=========================================================================
+
+
+
+get value of ip !ip 
+
+set value of ip ip := ...
+ 
+
+
+(* see the INTEGER structure *)
+
+(*
+(* puzzle  *)
+val regA : LargeInt.int = 47792830
+val regB : LargeInt.int = 0
+val regC : LargeInt.int = 0
+			    
+val program = [ 2,4,1,5,7,5,1,6,4,3,5,5,0,3,3,0 ]
+*)
+
+3 opcodes
+
+opcode , input , ....
+
+3 bit opcodes
+
+000  : 0 
+001  : 1
+010  : 2 
+011  : 3 
+100  : 4
+101  : 5 
+110  : 6 
+111  : 7
+
+opcode increases ip in steps of 2 except for jump instrructions
+reading past end of program results in a halt
+
+each instruction specifies type of operand
+two types of operand
+
+literal operand is the operand itself
+combo operands 0 through 3 represent 0 through 3 literals
+
+Combo operand 4 represents the value of register A.
+Combo operand 5 represents the value of register B.
+Combo operand 6 represents the value of register C.
+
+Combo operand 7 is reserved and will not appear in valid programs.
+
+opcode 0 adv
+
+division
+numerator is value in the A register
+denominator is found by raising 2 to the power of instructions combo
+
+2 ^ combo(!ip + 1)
+pow
+
+IntInf.pow (i,j)
+
+IntInf.divMod (i,j)    div  mod
+
+The adv instruction (opcode 0) performs division. The numerator is the
+value in the A register. The denominator is found by raising 2 to the
+power of the instruction's combo operand. (So, an operand of 2 would
+divide A by 4 (2^2); an operand of 5 would divide A by 2^B.) The
+result of the division operation is truncated to an integer and then
+written to the A register.
+
+The bxl instruction (opcode 1) calculates the bitwise XOR of register
+B and the instruction's literal operand, then stores the result in
+register B.
+
+standard ml Pitfalls o reserved operator op reserved keyword
+
+if do not know result is going to be a large integer , then mixing
+ three pots of fixed width ints , large ints and IntInf structure
+ thing which holds the math operations power pow for example div
+ division integer floored mod division remoainder ?
+
+
+
+The bst instruction (opcode 2) calculates the value of its combo
+operand modulo 8 (thereby keeping only its lowest 3 bits), then writes
+that value to the B register.
+
+
+The jnz instruction (opcode 3) does nothing if the A register is 0.
+However, if the A register is not zero, it jumps by setting the
+instruction pointer to the value of its literal operand; if this
+instruction jumps, the instruction pointer is not increased by 2 after
+this instruction.
+
+The bxc instruction (opcode 4) calculates the bitwise XOR of register
+B and register C, then stores the result in register B. (For legacy
+reasons, this instruction reads an operand but ignores it.)
+
+The out instruction (opcode 5) calculates the value of its combo operand modulo 8, then outputs that value. (If a program outputs multiple values, they are separated by commas.)
+
+The bdv instruction (opcode 6) works exactly like the adv instruction except that the result is stored in the B register. (The numerator is still read from the A register.)
+
+The cdv instruction (opcode 7) works exactly like the adv instruction except that the result is stored in the C register. (The numerator is still read from the A register.)
+
+*** more caution
+
+try have mutable variable ip
+ ip = 0 initially
+ then increment it by 2 each time call exec
+
+(* == mutable variables === *)
+val ip : int ref = ref 0 ;
+
+fun exec () =
+       (ip := (!ip) + 2 ; () )
+
+fun exec2 () =
+   let val a = 2
+   in
+	(ip := (!ip) + a ; () )
+   end
+
+
