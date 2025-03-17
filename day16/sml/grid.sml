@@ -1,0 +1,286 @@
+(* grid.sml - ok success finds 7036 for example.txt *)
+
+
+(* for a language want  *)
+(* local definitions override library definitions *)
+		  
+(* this is standard ml *)
+(* lets type check the hell out of it  *)
+
+(* val rl = fn : unit -> unit ; *)
+(* val rl = fn : unit -> unit = use "grid.sml"; *)
+
+(* val rl = fn : unit -> unit ; *)
+(* val rl = fn : unit = (use "grid.sml") : unit; *)
+(* fun rl () = use "grid.sml"; *)
+(* is the underscore ignored ?  *)
+val rl = fn (_ : unit) : unit => use "grid.sml"; 
+
+(* val mazeData : string list;		       *)
+val (mazeData : string list) = ["###############",
+				"#.......#....E#",
+				"#.#.###.#.###.#",
+				"#.....#.#...#.#",
+				"#.###.#####.#.#",
+				"#.#.#.......#.#",
+				"#.#.#####.###.#",
+				"#...........#.#",
+				"###.#.#####.#.#",
+				"#...#.....#.#.#",
+				"#.#.#.###.#.#.#",
+				"#.....#...#.#.#",
+				"#.###.#.#.#.#.#",
+				"#S..#.....#...#",
+				"###############"] ;
+
+(* process maze data *)
+val arr2 = Array2.array(15,15,#".");			    
+
+fun showGridHelper ( arr2 :char Array2.array,row:int,col:int,maxrow:int, maxcol:int):unit = 
+    if row >= maxrow then ()
+    else if col >= maxcol
+    then (print "\n"; showGridHelper(arr2,row+1,0,maxrow,maxcol))
+    else ( let val ch = Array2.sub(arr2,row,col)
+	   in
+	       print (Char.toString ch);
+	       showGridHelper (arr2, row, col+1 , maxrow , maxcol)
+	   end );
+
+fun showGrid ( arr2 :char Array2.array):unit =
+    let val (maxrow,maxcol) = Array2.dimensions(arr2)
+	val (row,col) = (0,0)
+    in
+	showGridHelper(arr2,row,col,maxrow,maxcol)
+    end ;
+
+		
+
+(* really show the grid *)
+fun bar () = showGrid(arr2);
+
+
+fun processChar ( mz ,row ,col ,len , arr2 )  = 
+    if col >= len then ()
+    else ( let val ch = String.sub( mz, col)
+	   in  Array2.update(arr2,row,col,ch) ;
+	       processChar( mz, row, col + 1, len, arr2)
+	   end );
+
+fun foo () = processChar(List.hd mazeData , 0 , 0 , String.size (List.hd mazeData) , arr2);
+
+
+(* fun processLine (mz : string) (arr2 : 'a Array2.array) : unit =   (); *)
+(* val processLine = fn (mz : string) => *)
+(* 		     (fn  (row:int) => *)
+(* 			 (fn arr2 => *)
+(* 			     let val col = 0 *)
+(* 			     in *)
+(* 				 processChar( mz ,row, col ,(String.size mz), arr2) *)
+(* 			     end )); *)
+
+fun processLine (mz : string) (row:int) arr2 =
+    let val col = 0
+    in
+	processChar( mz ,row, col ,(String.size mz), arr2)
+    end ;
+
+	
+(* fun processHelper (mz : string list) (row:int) arr2  = *)
+val processHelper = fn (mz : string list) =>
+		       (fn (row : int) =>
+			   (fn arr2 =>
+			       case mz of
+				   [] => arr2
+				 | (h :: t) =>
+				   (processLine h row arr2 ;
+				    processHelper t (row + 1) arr2)));
+
+		       
+
+fun process mz =
+    let val row = 0
+	val arr = Array2.array(15,15,#".")
+    in
+	processHelper mz row arr
+    end ;
+
+
+(* curried functions *)
+val f = fn x => (fn y => x + y);
+
+		  
+		  
+(* incapable of defining this  *)
+(* fun leng (xs : 'a list) : int = List.length xs; *)
+(* fun leng (xs : string) : int = String.size xs; *)
+
+
+(* :: is cons operator *)
+(* : is type of operator  *)
+
+(* val butfirst : list -> list option ; *)
+(* fun butfirst xs = case xs of  *)
+(*     (h :: tl) => SOME tl *)
+(*   | _ => NONE *)
+
+(* val butfirst = fn : list => list ; *)
+(* val butfirst = fn : 'a list -> 'a list ; *)
+(* cannot type check entire thing , need explicitly type check each argument *)
+fun butfirst (xs : 'a list) : 'a list =
+    case xs of
+	( h :: tl) => tl
+      | _  => raise Empty ;
+
+
+(* val butlast = fn : list -> list ; *)
+fun butlast (xs : 'a list) : 'a list =
+    case xs of
+	[] => raise Empty
+     | ( x :: []) => []
+     | ( h :: tl) => h :: (butlast tl) ;
+
+	   
+(* fun showGrid *)
+val arr = Array.array(10,0);
+
+val maze = let val r = process mazeData
+	   in
+	       Array2.update(r,13,1,#".");
+	       Array2.update(r,1,13,#".");	       
+	       r
+	   end ;
+
+	       
+	       
+
+
+(* string length = String.size*)
+val a = "asdf";
+
+(* how represent character in standard ml  *)
+val ch = #"c";
+
+
+(* do not go above some pre determined limit say 10 corners or circa 11k
+start
+stop
+cost = cost incurred
+limit do not continue if cost excessive
+dir direction
+
+we do not copy the grid , so if we need to , just reload and have computer build a fresh
+clean correct list
+ *)
+
+datatype direction = up | left | right | down ;
+
+(* is the position x y on the board - for my small example *)
+fun onboard (x:int) (y:int) : bool =
+    if x < 1 then false
+    else if x > 13 then false
+    else if y > 13 then false
+    else if y < 1 then false
+    else true ;
+
+fun markPosition arr x y =
+    Array2.update(arr,x,y,#"O") 
+
+fun unMarkPosition arr x y =
+    Array2.update(arr,x,y,#"O") 
+
+		 
+
+(* cost incorporate 1000 for turn plus 1 for move in that direction *)
+(* unmark position *)
+(* fun dbug (x:int) (y:int) = *)
+(*     print "At "; print (Int.toString x) ; print ","; print (Int.toString y);  print "\n" *)
+
+
+										    
+
+(* only mutually recursive functions need to be carried together with "and" *)
+fun wanderUp arr x y cost limit dir =
+    (* dbug x y ;  *)
+    let fun empty x y = not(Array2.sub(arr,x,y) = #"#")
+	fun cango x y = onboard x y andalso empty x y
+    in
+	(if cango x (y-1) then wander arr x (y-1) (cost+1) limit up else ());	
+	(if cango (x-1) y then wander arr (x-1) y (cost+1001) limit left else ());
+	(if cango (x+1) y then wander arr (x+1) y (cost+1001) limit right else ()) 
+    end
+
+and	
+wanderDown arr x y cost limit dir =
+    let fun empty x y = not(Array2.sub(arr,x,y) = #"#")
+	fun cango x y = onboard x y andalso empty x y
+    in
+	(if cango x (y+1) then wander arr x (y+1) (cost+1) limit down else ());	
+	(if cango (x-1) y then wander arr (x-1) y (cost+1001) limit left else ());
+	(if cango (x+1) y then wander arr (x+1) y (cost+1001) limit right else ()) 
+    end
+
+and
+wanderLeft arr x y cost limit dir =
+    let fun empty x y = not(Array2.sub(arr,x,y) = #"#")
+	fun cango x y = onboard x y andalso empty x y
+    in
+	(if cango (x-1) y then wander arr (x-1) y (cost+1) limit left else ());	
+	(if cango x (y-1) then wander arr x (y-1) (cost+1001) limit up else ());
+	(if cango x (y+1) then wander arr x (y+1) (cost+1001) limit down else ()) 
+    end
+
+and
+wanderRight arr x y cost limit dir =
+    let fun empty x y = not(Array2.sub(arr,x,y) = #"#")
+	fun cango x y = onboard x y andalso empty x y
+    in
+	(if cango (x+1) y then wander arr (x+1) y (cost+1) limit right else ());	
+	(if cango x (y-1) then wander arr x (y-1) (cost+1001) limit up else ());
+	(if cango x (y+1) then wander arr x (y+1) (cost+1001) limit down else ()) 
+    end
+
+and		 
+wander arr x y cost limit dir =
+    if (cost > limit) then ()
+    else if (x = 13 andalso y = 1) then
+	(print "\nSolution with cost of "; print (Int.toString cost) ; print "\n";
+	 showGrid arr ; print "\n")
+    else
+    (markPosition arr x y ;
+     if dir = up then wanderUp arr x y cost limit dir else ();
+     if dir = left then wanderLeft arr x y cost limit dir else ();
+     if dir = right then wanderRight arr x y cost limit dir else ();
+     if dir = down then wanderDown arr x y cost limit dir else ();
+     unMarkPosition arr x y );
+
+
+(* its ok finds 7036 using example.txt ok *)
+    
+fun run () =
+    let val startx = 1
+	val starty = 13
+	val cost = 0
+	val limit = 7036
+	val dir = up
+    in		      
+	wander maze startx starty cost limit dir
+    end ;
+
+	  
+(*
+do we mark the maze at position we are at ?
+
+
+*)	
+    
+let val x = 2
+    val y = x + x
+in y
+end ;
+    
+	   
+
+
+
+	    
+
