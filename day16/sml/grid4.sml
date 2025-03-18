@@ -1,6 +1,36 @@
-(* grid4.sml - can we rewrite in a nicer way *)
+(* grid4.sml - can we rewrite in a nicer way 
+
+
+idea is find any empty - flood fill that square such that
+
+# P #
+from P go up (pass 1)
+from P go down (pass 2)
+such that we do not cross the other pass
+
+after flood fill , have we reached both the start and the end ?
+if not - found a case where that square cannot be part of minimal solution
+
+####.#   this will eliminate this silly where leads nowhere 
+##...#  
+##.#.#
+##...#
+######
+
+
+idea is of a teleport
+stuck in a narrow tunnel and there is no option but to follow it then the maze can be simplified to a
+teleport , where skip across many nooks and crannies
+
+highlights ideas of search space being too vast to even mentally grasp what it is you are trying to do
+
+heuristic move towards upper right part of screen , does that hold water ? cant see how it could .
+
+
+*)
+
 (* one of the ideas we had was to elimiinate dead ends , thereby simplifying the search *)
-(* we have maze , completely empty , only knows distributed throughout code the start square and end square							       *)
+(* we have maze , completely empty , only knows distributed throughout code the start square and end square *)
 
 (* # # # *)
 (* # P # *)
@@ -430,21 +460,6 @@ fun wander (arr:char Array2.array) (x:int) (y:int) (cost:int) (limit:int) (dir: 
 	)
 	    							      
 
-(* its ok finds 11044 using example2.txt ok *)
-fun run limit () =
-    (
-      simp maze ;  (* simplify maze  *)
-      let val startx = 1
-	  val starty = 139
-	  val cost = 0
-	  (* val limit = 7036 *)
-	  val dir = right
-      in
-	  wander maze startx starty cost limit dir
-      end
-    );
-
-
 
 exception Bad_coordinate
 
@@ -540,6 +555,23 @@ fun simp arr =
     end ;
 
 
+(* its ok finds 11044 using example2.txt ok *)
+fun run limit () =
+    (
+      simp maze ;  (* simplify maze  *)
+      let val startx = 1
+	  val starty = 139
+	  val cost = 0
+	  (* val limit = 7036 *)
+	  val dir = right
+      in
+	  wander maze startx starty cost limit dir
+      end
+    );
+
+
+
+
 (* for mlton  *)
 (* run 999999 () ; *)
 (* run 999999999 (); *)
@@ -550,7 +582,7 @@ fun simp arr =
 where P is neither 139,1 or 1,139 
 *)
 
-run 262008 ();
+(* run 262008 (); *)
 
 
 
