@@ -1,5 +1,8 @@
 #|
 
+this is a test to see if i can make a change to breadth2 file on old computer
+
+
 * weird 2d implementation of grid using association lists ??? dont ask *
 
 start at S location facing east
