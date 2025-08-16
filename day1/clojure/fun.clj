@@ -30,7 +30,8 @@ lines
 (emptyS "")
 (emptyS 1)
 
-(defn not [s]
+
+#_(defn not [s]
   (if (= s false)
     true
     false))
@@ -152,6 +153,8 @@ sumDistList
 
 ;; "we get 1765812"
 ;; fun/sumDistList -> 1765812
+
+(def answer sumDistList)
 
 
 
