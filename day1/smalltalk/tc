@@ -1,0 +1,23 @@
+
+" tc workspace "
+
+|c w |
+Transcript clear.
+c := CentralStar new.
+c openInWorld.
+w := c world. 
+w submorphs do: [:object | 
+	Transcript show: 'The object name: ' , object className; cr.
+	"object className = 'CentralStar' ifTrue: [object delete] "
+	object = CentralStar ifTrue: [object delete] 
+	].
+c delete.
+
+
+|c|
+c := CentralStar new.
+c openInWorld.
+c startStepping.
+
+Color random.
+
