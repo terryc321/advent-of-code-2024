@@ -1,6 +1,27 @@
 
 "tc2 workspace "
 
+
+"lets make a spacewar"
+"spacewar can be just the game itself , that contains menu , game options , so forth , "
+|c|
+c := SpaceWar new.
+c openInWorld.
+
+
+"from book 2 the art of morph"
+| hallOfFame |
+hallOfFame := Morph allSubclasses collect: [:each |
+   Array with: each with: each subclasses size].
+hallOfFame := hallOfFame sort: [:array1 :array2 | array1 second > array2 second]
+
+
+"we have created a central star which changes color every 200 milliseconds using its own clock"
+|c|
+c := CentralStar new.
+c openInWorld.
+
+
 "wantsSteps step stepTime "
 
 |c w |

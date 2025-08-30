@@ -1,0 +1,434 @@
+
+"git clone git@github.com:Cuis-Smalltalk/Cuis-Smalltalk-UI.git in the cuis image folder"
+Feature require: 'UI-Shapes'.
+
+"from morphic examples classes we collect all draw code into one class so we can cherry pick later"
+Transcript clear.
+
+"how clear transcript"
+
+"make smalltalk fullscreen"
+Display fullScreenMode: true.
+Display fullScreenMode: false.
+
+"change world background color"
+WorldMorph allInstancesDo: [:world | 
+		Transcript show: 'world = ' ; show: world ; show: ' color>' ; show: world color. cr . 	
+		world color: Color white.				
+		].
+
+"kill all taskbars"
+TaskbarMorph allInstancesDo: [:tbar |  tbar delete ].
+
+"can we show browser from code ? "
+WorldMorph inspect. 
+WorldMorph browseClassHierarchy.
+
+"can we have more than one world morph ? "
+
+
+"sb:= `System Browser` class."
+"sb."
+"self makeAllPixelsAlpha: 0.5 ."
+
+
+"get source code of "
+(MyClass >> #browse) methodSourceString
+
+"how hide the transcript window"
+"how show the transcript window"
+
+p := PlayButton new.
+p openInWorld.
+p delete.
+
+s := CentralStar new.
+s openInWorld.
+s hide.
+s show.
+s delete.
+
+p := Planet new.
+p openInWorld.
+p hide.
+p show.
+"cannot yet resize a morph ?"
+p morphExtent . 50@50 .
+p delete.
+
+
+"lets move the sun and planet"
+p morphExtent . 50@50 .
+p morphPosition:  100@100 . 
+p morphPosition .
+p morphPosition: (p morphPosition) + `-100@0` .
+p morphPosition: (p morphPosition) + `100@0` .
+
+s morphPosition:  500@500 . 
+
+s morphPosition.  510.0@590.0 .
+p morphPosition.  260.0@478.0 .
+
+"which way do we move the planet ? "
+p2 := Planet new.
+p2 openInWorld.
+p2 delete.
+
+p morphPosition.  106.0@301.0 .
+
+(p morphPosition) / 2.
+
+"if do not know what method is try a TAB , b TAB , c TAB approach ..."
+"if we look for objects of certain class in smalltalk"
+"find all planets make them move 100 100"
+"must be collecting wrong objects not actual planets"
+Transcript clear.
+Transcript show: 'Planet finder test'; cr . 
+Planet allInstancesDo: [ :planet | 
+	|sun|
+		Transcript show: 'Planet = ' ; show: obj ; cr . 			
+		sun := self morphPosition.
+		"fill in the rest ..."		
+	]. 
+
+Smalltalk allClassesDo: [:obj | 
+	((obj className) = 'Planet') ifTrue:[
+		Transcript show: 'Planet = ' ; show: obj ; cr . 
+		"obj morphPosition: ((obj morphPosition) + `100@100`).
+		obj redrawNeeded.
+		"
+		 ]
+	].
+
+"make a reset button"
+WorldMorph allInstancesDo: [:world | 
+		Transcript show: 'world = ' ; show: world ; cr . 			
+		].
+	
+"physics around gravity
+rough estimation earth is spherical 
+mass units 10^24 kg
+Earth mass: 5.97e24 kg   radius: 6.371e3 km distSun: 1.5104e8 km  (151 million kilometres)
+Sun mass: 1.989100e30 kg radius: 6.95950e5 km  
+Moon mass:kg radius: km 
+solar eclipse
+distance between earth and sun ?
+"
+
+earthMass := 5.97e24 .
+earthRadius := 6.371e6 .
+
+
+sunMass := 1.989100e30 .
+sunRadius := 6.95950e8 .
+
+earthSunDistance := 1.5104e11 . 
+
+"scale ? "
+(earthSunDistance / earthRadius).  23707.424266206246 .
+(sunRadius / earthRadius). 109.2371684194004 .
+"sun is about 109 times larger than earth"
+
+"Re <-......... 23707Re ......-> 100Re "
+"how does that look at scale ?"
+
+
+"scale to fit a box Rx Ry"
+"Rx = Re + 23707Re + 100Re"
+"Ry = 100Re"
+
+s stopStepping .
+
+"rf radius factor scaling"
+re := 1 . 
+rf := 0.01 . 
+rx :=  rf * ((re + (23707 * re) + (100 * re))).
+ry := rf * (100 * re) . 
+rx @ ry .
+
+ 238.08@1.0 .
+
+"how draw string to morph ?"
+
+"draw line from 0,0 to 238,0"
+"ends of line , cannot see earth , sun is width of 1"
+""
+
+"how high would need build to get above clouds"
+"focus suns power on mountains?"
+""
+
+"how do i look for objects that match criteria"
+
+
+"questions"
+
+"how do i control the world menu - menu itself "
+"how do i put stuff into the world menu"
+"how do i make my own custom browser ?"
+"how do i accept changes automatically , but also have option to undo changes ?"
+"how do i reconfigure keyboard shortcuts on all morphs"
+
+
+"deleting an object stops that object from executing code
+affects/effects persist - the transcript written to contains words written to it from that object"
+
+
+
+"-----------------------------"
+"what is pi ?"
+
+"90 degrees is pi / 2 or half pi"
+(90 degreesToRadians)  1.5707963267948966 .
+
+"180 degrees is pi roughly 3.14"
+(180 degreesToRadians)  3.141592653589793 .
+
+"360 degrees is 2 * pi  roughly 6.28 something"
+(360 degreesToRadians)  6.283185307179586 .
+"------------------------------"
+
+"points"
+`100 @ 100` className.  'Point' .
+`Point rho: 100 theta: (0 degreesToRadians)`.  100.0@0.0 .      
+`Point rho: 100 theta: (90 degreesToRadians)`.   0.0@100.0      "6.123233995736766e-15@100.0 ."
+`Point rho: 100 theta: (180 degreesToRadians)`.  -100.0@0.0   "-100.0@1.2246467991473532e-14 ."
+`Point rho: 100 theta: (270 degreesToRadians)`.  0.0@-100.0    "-1.8369701987210297e-14@ -100.0 ."
+`Point rho: 100 theta: (360 degreesToRadians)`.  100.0@0.0      "100.0@ -2.4492935982947064e-14 ."
+
+"--------------------------------"
+
+"play button shape"
+"do we not have a button "
+
+"square within a square"
+aCanvas strokeWidth: 10 color: `Color blue` do: [
+	       "border 100 100 rectangle"
+		aCanvas
+				moveTo: `0@0`;
+				lineTo: `100@0`;		
+				lineTo: `100@100`;		
+				lineTo: `0@100`;		
+				lineTo: `0@0`.				
+              "inner box 50 50 rectangle"				
+		aCanvas
+				moveTo: `25@25`;
+				lineTo: `75@25`;		
+				lineTo: `75@75`;		
+				lineTo: `25@75`;		
+				lineTo: `25@25`.				
+		].
+
+
+"staircase"
+aCanvas strokeWidth: 10 color: `Color blue` do: [
+		aCanvas
+				moveTo: `0@0`;
+				lineTo: `100@0`;		
+				lineTo: `100@100`;		
+				lineTo: `200@100`;		
+				lineTo: `200@200`;
+				lineTo: `300@200`;
+				lineTo: `300@300`.
+		].
+	
+
+
+
+"------------------------------"
+"documentation of moveTo:"
+"moveTo:"
+"moveTo:"
+(VectorCanvas onForm: Display)
+	strokeWidth: 2.0 color: Color black do: [ :canvas |
+		canvas
+			moveTo: 100@100;
+			lineTo: 200@150 ].
+Display forceToScreen.
+
+
+"circleCenter: aPoint radius: mr"
+(VectorEngine onForm: Display subPixelAntiAliasing: true)
+	strokeWidth: 2.0 color: Color red do: [ :engine |
+		engine
+			circleCenter: 200 @ 150 radius: 80].
+Display forceToScreen.
+
+
+| e f utf32 |
+'Try All four!'.
+e := VectorEngineWholePixel onForm: Display.
+e := VectorEngineSubPixel onForm: Display.
+e := VectorEngineWithPluginWholePixel onForm: Display.
+e := VectorEngineWithPluginSubPixel onForm: Display.
+f := 	FontFamily defaultFamilyAndPointSize fontDescription.
+utf32 := #(4314 4317 4320 4308 4315 32 4312 4324 4321 4323 4315 32 4307 4317 4314 4317 4320 32 4321 4312 4311 32 4304 4315 4308 4311 44 32 4327 4323 4317 32 4323 4311 32 4307 4312 4330 4304 4311 32 4304 4314 4312 4327 4323 4312 4307 44 32 4304 4307 32 4314 4312 4305 4320 4312 4321 32 4330 4308 4311 4308 4320 4317 4321 32 4320 4308 4324 4320 4308 4336 4308 4316 4307 4323 4316 4311 32 4308 4321 4311 46 32 4314 4308 4306 4308 4320 4308 32 4330 4317 4320 4324 4317 4320 4304 32 4308 4324 4324 4312 4330 4312 4304 4316 4311 4323 4320 32 4304 4311 32 4308 4304 4315 44 32 4316 4317 32 4327 4323 4304 4321 32 4315 4308 4316 4304 4316 4307 4320 4312 32 4320 4308 4324 4308 4320 4320 4308 4316 4311 4323 4320 32 4327 4323 4312 46 32 4311 4308 32 4324 4323 4311 4308 4316 4311 32 4315 4317 4314 4314 4312 4321 32 4330 4308 4311 4308 4320 4317 4321 32 4309 4312 4321 46 32 4309 4312 4315 32 4307 4308 4316 4312 4327 4323 4308 32 4309 4312 4309 4308 4316 4307 4323 4315 32 4311 4336 4308 4317 4324 4336 4320 4304 4321 4311 4323 4321 32 4308 4334 44 32 4308 4304 32 4336 4304 4321 32 4309 4317 4314 4323 4315 4323 4321 32 4324 4304 4321 4311 4312 4307 4312 4312 32 4307 4308 4321 4308 4320 4323 4316 4311 46 32 4308 4334 32 4317 4324 4324 4312 4330 4312 4312 4321 32 4311 4317 4320 4327 4323 4304 4311 4317 4321 32 4315 4308 4312 44 32 4307 4317 4330 4311 4323 4321 32 4309 4312 4309 4308 4316 4307 4323 4315 32 4312 4316 32 4327 4323 4317 46 32 4321 4323 4315 4315 4317 32 4311 4320 4304 4330 4311 4304 4311 4317 4321 32 4308 4312 32 4312 4323 4321 44 32 4323 4311 32 4317 4315 4316 4308 4321 32 4309 4312 4320 4311 4323 4311 4308 32 4307 4308 4311 4320 4304 4334 4312 4311 46) asWordArray.
+e drawUtf32String: utf32 from: 1 to: utf32 size at: 10@120 trueTypeFont: f color: Color black scale: 30 preventMirroring: true.
+Display forceToScreen.
+
+
+| e f utf32 |
+'Try All four!'.
+e := VectorEngineWholePixel onForm: Display.
+f := 	FontFamily defaultFamilyAndPointSize fontDescription.
+"utf32 := (#(68 69 70) asWordArray) ."
+utf32 := 'hello world'.
+e drawUtf32String: utf32 from: 1 to: utf32 size at: 10@120 trueTypeFont: f color: Color black scale: 30 preventMirroring: true.
+Display forceToScreen.
+
+
+
+"-------------------------------------"
+
+
+aCanvas strokeWidth: 1 color: `Color blue` do: [
+		aCanvas
+				moveTo: `(Point 0 0)`;
+				lineTo: `(Point 50 50)`.		
+		].
+	
+
+"strokeWidth:color:do:"
+	aCanvas strokeWidth: 1 color: `Color blue` do: [
+		aCanvas
+				moveTo: `(Point rho: 0 theta: 0 degreesToRadians)`;
+				lineTo: `(Point rho: 500 theta: (90) degreesToRadians)`.		
+		].
+	
+"------------------------------"
+
+
+"------------------------------"	
+
+	aCanvas strokeWidth: 1 color: `Color lightOrange` do: [
+		aCanvas
+				moveTo: `(Point rho: 300 theta: 90 degreesToRadians)`;
+				lineTo: `(Point rho: 300 theta: (360/5*2+90) degreesToRadians)`;
+				lineTo: `(Point rho: 300 theta: (360/5*4+90) degreesToRadians)`;
+				lineTo: `(Point rho: 300 theta: (360/5*6+90) degreesToRadians)`;
+				lineTo: `(Point rho: 300 theta: (360/5*8+90) degreesToRadians)`;
+				lineTo: `(Point rho: 300 theta: 90 degreesToRadians)`.
+		
+		].
+	
+	
+aCanvas strokeWidth: 12 color: `Color lightOrange` do: [
+	"aCanvas fillColor: Color lightOrange do: ["
+	"aCanvas strokeWidth: 12 color: Color lightOrange fillColor: Color yellow do: ["
+		aCanvas
+				moveTo: `(Point rho: 100 theta: 90 degreesToRadians)`;
+				lineTo: `(Point rho: 100 theta: (360/5*2+90) degreesToRadians)`;
+				lineTo: `(Point rho: 100 theta: (360/5*4+90) degreesToRadians)`;
+				lineTo: `(Point rho: 100 theta: (360/5*6+90) degreesToRadians)`;
+				lineTo: `(Point rho: 100 theta: (360/5*8+90) degreesToRadians)`;
+				lineTo: `(Point rho: 100 theta: 90 degreesToRadians)`.
+		].
+	aCanvas strokeWidth: 1 color: Color lightOrange fillColor: Color red do: [
+		aCanvas polyLine: {
+			100@0.
+			140@0.
+			140@240.
+			100@240.
+			100@0 } ].
+	aCanvas strokeWidth: 1 color: Color lightOrange fillColor: Color green do: [
+		aCanvas polyLine: {
+			0@100.
+			0@140.
+			240@140.
+			240@100.
+			0@100 } ].
+		
+		
+	aCanvas strokeWidth: 4 color: Color green dashedStrokeBits: 2r1111000010000 dashBitLength: 2 dashBitOffset: dashOffset do: [
+		aCanvas
+				moveTo: aStart;
+				quadraticBezierTo: aEnd control: aControlPoint ].
+
+	aCanvas strokeWidth: 1 color: Color darkGray dashedStrokeBits: 16rFFFF0000 dashBitLength: 0.3 dashBitOffset: 0 do: [
+		aCanvas
+				moveTo: aStart;
+				lineTo: aControlPoint;
+				lineTo: aEnd ].
+
+	aCanvas strokeWidth: 3 color: Color red dashedStrokeBits: 2r1000000010000000 dashBitLength: 2 dashBitOffset: dashOffset do: [
+		aCanvas
+				moveTo: bStart;
+				cubicBezierTo: bEnd control1: bControlPoint1 control2: bControlPoint2 ].
+	aCanvas strokeWidth: 1 color: Color darkGray dashedStrokeBits: 2r01010101010101010101010101010101 dashBitLength: 2 dashBitOffset: 0 do: [
+		aCanvas
+				moveTo: bStart;
+				lineTo: bControlPoint1;
+				lineTo: bControlPoint2;
+				lineTo: bEnd ].
+			
+			
+	aCanvas strokeWidth: 30 color: `Color gray` fillColor: `Color lightGreen duller` do: [
+		aCanvas
+				pathSequence: `#[
+					0.0  150.0  150.0
+					3.0  300.0  300.0  150.0  233.0  217.0  300.0
+					3.0  450.0  150.0  380.3  300.0  450.0  233.0
+					3.0  300.0  0.0      450.0  67.0    383.0  0.0
+					3.0  150.0  150.0  210.7  0.0      150.0  67.0
+					] asFloat32Array`
+		].
+
+	aCanvas strokeWidth: 30 color: `Color gray` do: [
+		aCanvas
+				pathSequence: `#[
+					0.0 220.0 190.0
+					2.0 300.0 240.0 245.0 240.0
+					2.0 380.0 190.0 355.0 240.0
+					0.0 250.0 100.0
+					1.0 250.0 120.0
+					0.0 350.0 100.0
+					1.0 350.0 120.0
+					] asFloat32Array`
+		].
+	
+"----------------------------------------------"
+			
+			
+"why can we not cascade messages correctly?"
+"c := (CentralStar new ; openInWorld)."
+c := CentralStar new.
+c openInWorld.
+
+s := Sample03Smiley new openInWorld.
+s delete.
+
+"---------------------"
+
+|m|
+m := Morph new extent: 320@240; color: Color white; openInWorld.
+m addMorph: (Ellipse new color: Color red; position: 50@50).
+m addMorph: (EllipseMorph new color: Color green; position: 100@50).
+m addMorph: (EllipseMorph new color: Color blue; position: 150@50).
+m submorphs   
+
+
+"---------------------"
+
+
+"central star - ie the sun "
+
+|t|
+t := CentralStar new.
+t openInWorld.
+
+"how do we browse the CentralStar class"
+"how do we browse only the SpaceWar! package"
+
+"how do we set keyboard shortcuts"
+
+"morphic"
+"h"
+
+
+" -------- experimental ----------"
+
+"how do i get the world morph in cuis ?"
+
+WorldMorph submorphs
+    select: [ :m | m isKindOf: PlayButton ]
+    thenDo: [ :m | m delete ].

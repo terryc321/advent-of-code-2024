@@ -1,0 +1,45 @@
+
+"see class hierachy"
+ColoredBoxMorph browseClassHierarchy .
+WorldMorph browseClassHierarchy .
+
+m := ColoredBoxMorph new. "Create a new morph instance"
+m openInWorld. "Show the instance"
+
+
+m color: Color black. "Make the morph black"
+m morphExtent: 200@150. "Make it this big"
+m morphHeight: 170. "I didn’t like it, let’s make it taller"
+m morphWidth: 170. "On the second thought, a square would seem nicer"
+m morphPosition: 100@100. "Move, I can’t see a thing"
+"m left: 50." "A little more to the left, okay"
+
+m morphExtent.
+
+m inspect.
+m delete.
+
+
+"make an example class"
+Object classOfObject: #Example [
+    instanceVariableNames: ''
+    classVariableNames: ''
+    poolDictionaries: ''
+    category: 'Smalltalk Examples'
+]
+
+
+"give it a method to print something , which will dump given to transcript"
+Example class extend [
+    printSomething: what
+        10 timesRepeat: [
+            Transcript show:what.
+        ]
+]
+
+Eval [
+    Transcript show: 'Derp'.
+    (Example new) printSomething: 'Derpy'.
+]
+
+
