@@ -2,21 +2,39 @@ values := #(#(90 91 93 96 93) #(3 5 7 10 11 11) #(35 37 39 42 46) #(67 70 72 74 
 
 values size.
 
-"one two or three"
-oneTwoOrThree := [:a :b |
-  |tmp|
-  tmp := false.
-  (a - b) abs = 1 ifTrue:[tmp := true].
-  (a - b) abs = 2 ifTrue:[tmp := true].
-  (a - b) abs = 3 ifTrue:[tmp := true]. 
-  tmp.
- ].
- 
-oneTwoOrThree value: 1 value: 2.
-oneTwoOrThree value: 1 value: 3.
-oneTwoOrThree value: 1 value: 4.
+
+t := TArray new.
+t from: #(8 6 4 4 1).   "safe if remove 2nd 4"
+t isSafe.  
+t getArr.
+t2 := t remove: 4 .
+t2 getArr.
+t2 isSafe.
 
 
+t := TArray new.
+t from: #(8 6 4 4 1).   "safe if remove 2nd 4"
+t isSafeBad1.  
+
+"now just iterate over all the values and total how many are safeBad1 "
+
+|tot|
+tot := 0 .
+values do: [ :arr | 
+	| tmp |	
+	tmp := TArray new.
+	tmp from: arr .
+	tmp isSafeBad1  ifTrue:[ tot := tot + 1 ]
+	].
+tot.
+
+ 476 .
+
+"Answer accepted."
+
+
+
+"------------- ignore everything below this line ----------------------------------- "
 
 "all decreasing"
 "basically just a dirty for loop"

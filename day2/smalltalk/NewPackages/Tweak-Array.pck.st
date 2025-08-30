@@ -1,7 +1,7 @@
-'From Cuis7.5 [latest update: #7452] on 30 August 2025 at 2:22:14 am'!
+'From Cuis7.5 [latest update: #7471] on 31 August 2025 at 12:21:05 am'!
 'Description a variation on a normal array
 '!
-!provides: 'Tweak-Array' 1 3!
+!provides: 'Tweak-Array' 1 6!
 SystemOrganization addCategory: #'Tweak-Array'!
 
 
@@ -174,11 +174,16 @@ isSafe
 	
 	! !
 
-!TArray methodsFor: 'as yet unclassified' stamp: 'tc 8/30/2025 02:20:44'!
+!TArray methodsFor: 'as yet unclassified' stamp: 'tc 8/31/2025 00:00:46'!
 isSafeBad1
-       "no idea what we are doing"
-	"can an array be made safe by removing one element of the array?"
-	"construct an array with nth element missing"
+   "essentially if we remove one element from the array then ask isSafe 
+we should get correct answer , provided isSafe works correctly.
+arr is local variable to class Tarray is just a normal array
+figure out how to go about removing the nth element of an array -> make a new array with that element removed
+construct new TArray object and call isSafe on it , if it is safe then isSafeBad1 is also safe.
+possibly duplicating copyign going on but for this quick and dirty
+"
+      
 	| sz |
 	sz := arr size.
 	1 to: sz do: [ :i |
@@ -195,3 +200,27 @@ isSafeBad1
 	^ true. 
 	
 	! !
+
+!TArray methodsFor: 'as yet unclassified' stamp: 'tc 8/31/2025 00:20:58'!
+remove: item
+  "remove the nth item from self
+  if item is larger than size of array then method is ignored ? or should throw error? 
+  lets just return size of array for now
+ iterate over the array itself , add items if i not = item then end up with either original array or smaller array
+"
+   | sz oc oc2 |
+    sz := arr size. 
+    oc := #() asOrderedCollection .
+
+   1 to: sz do: [ :elem | 
+		elem = item ifTrue:[ nil ] ifFalse:[ oc add: (arr at: elem ) ] 
+	].
+   oc2 := oc asArray.
+   Transcript show: oc2 ; cr . 
+   ^ TArray from: oc2 
+
+
+
+
+
+! !
