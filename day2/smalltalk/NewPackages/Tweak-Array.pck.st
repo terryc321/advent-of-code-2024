@@ -1,7 +1,7 @@
-'From Cuis7.5 [latest update: #7471] on 31 August 2025 at 12:21:05 am'!
+'From Cuis7.5 [latest update: #7471] on 31 August 2025 at 12:42:39 am'!
 'Description a variation on a normal array
 '!
-!provides: 'Tweak-Array' 1 6!
+!provides: 'Tweak-Array' 1 7!
 SystemOrganization addCategory: #'Tweak-Array'!
 
 
@@ -43,6 +43,13 @@ from: aArray
 	^ self.
 	
 	
+	
+	
+	! !
+
+!TArray methodsFor: 'as yet unclassified' stamp: 'tc 8/31/2025 00:29:48'!
+getArr
+	^ arr
 	
 	
 	! !
@@ -174,7 +181,7 @@ isSafe
 	
 	! !
 
-!TArray methodsFor: 'as yet unclassified' stamp: 'tc 8/31/2025 00:00:46'!
+!TArray methodsFor: 'as yet unclassified' stamp: 'tc 8/31/2025 00:33:56'!
 isSafeBad1
    "essentially if we remove one element from the array then ask isSafe 
 we should get correct answer , provided isSafe works correctly.
@@ -186,29 +193,24 @@ possibly duplicating copyign going on but for this quick and dirty
       
 	| sz |
 	sz := arr size.
-	1 to: sz do: [ :i |
+	1 to: sz do: [ :i |		
 		|tmp |
-		tmp := Array new: (sz-1).		
-		1 to: sz do: [:j | 
-			j < i ifTrue:[].
-			"j = i ifTrue:[]. skip"
-			j > i ifTrue:[tmp at: (j-1) put: 0].
-			].
-		^ tmp.
+		tmp := self remove: i .
+		tmp isSafe ifTrue:[ ^ true ] 
 		].
-	"check if it is safe - if so , return true - it is safe with one bad element removed"
-	^ true. 
+	"not able to discover this array is safe by any means"
+	^ false.
 	
 	! !
 
-!TArray methodsFor: 'as yet unclassified' stamp: 'tc 8/31/2025 00:20:58'!
+!TArray methodsFor: 'as yet unclassified' stamp: 'tc 8/31/2025 00:31:34'!
 remove: item
   "remove the nth item from self
   if item is larger than size of array then method is ignored ? or should throw error? 
   lets just return size of array for now
  iterate over the array itself , add items if i not = item then end up with either original array or smaller array
 "
-   | sz oc oc2 |
+   | tmp sz oc oc2 |
     sz := arr size. 
     oc := #() asOrderedCollection .
 
@@ -217,7 +219,13 @@ remove: item
 	].
    oc2 := oc asArray.
    Transcript show: oc2 ; cr . 
-   ^ TArray from: oc2 
+   tmp := TArray new.
+   tmp from: oc2 .
+   ^ tmp .
+
+
+
+
 
 
 
